@@ -11,6 +11,7 @@ generator clientFrontend {
 
 datasource db {
   provider   = "postgresql"
+  url        = env("DATABASE_URL")
   extensions = [vector]
 }
 
@@ -51,6 +52,7 @@ model User {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
+  @@index([createdAt(sort: Desc)])
   @@map("users")
 }
 
@@ -71,6 +73,7 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
   @@map("accounts")
 }
 
@@ -81,6 +84,7 @@ model Session {
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
+  @@index([userId])
   @@map("sessions")
 }
 
@@ -119,6 +123,9 @@ model Post {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
+  @@index([authorId])
+  @@index([createdAt(sort: Desc)])
+  @@index([isPublished, publishedAt(sort: Desc)])
   @@map("posts")
 }
 
@@ -140,6 +147,8 @@ model Comment {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
+  @@index([postId])
+  @@index([authorId])
   @@map("comments")
 }
 
@@ -161,6 +170,8 @@ model Media {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
+  @@index([userId])
+  @@index([postId])
   @@map("media")
 }
 
@@ -178,6 +189,9 @@ model AILog {
 
   createdAt DateTime @default(now())
 
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt(sort: Desc)])
   @@map("ai_logs")
 }
 
@@ -193,5 +207,6 @@ model Embedding {
 
   createdAt DateTime @default(now())
 
+  @@index([postId])
   @@map("embeddings")
 }

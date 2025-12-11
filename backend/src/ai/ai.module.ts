@@ -6,7 +6,8 @@ import { HuggingFaceProvider } from './huggingface.provider';
 import { SeoService } from './seo.service';
 import { EmbeddingsService } from './embeddings.service';
 import { SearchService } from './search.service';
-import { JobsModule } from '../jobs/jobs.module'; // Import to use JobsService
+import { JobsModule } from '../jobs/jobs.module';
+import { PrismaService } from '../prisma.service';
 
 @Module({
     imports: [JobsModule],
@@ -18,6 +19,7 @@ import { JobsModule } from '../jobs/jobs.module'; // Import to use JobsService
         SeoService,
         EmbeddingsService,
         SearchService,
+        PrismaService,
     ],
     exports: [AIService, SearchService],
 })

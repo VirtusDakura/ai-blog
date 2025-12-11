@@ -1,85 +1,100 @@
-import { Controller, Post, Body, Res, BadRequestException, Get, Param, Query } from '@nestjs/common';
+import { Controller, Post, Body, Res, Get, Param, Query, Logger } from '@nestjs/common';
 import { AIService } from './ai.service';
 import { JobsService } from '../jobs/jobs.service';
 import { SearchService } from './search.service';
+import { GeneratePostDto } from './dto/generate-post.dto';
+import { GenerateSeoDto } from './dto/generate-seo.dto';
+import { GenerateEmbeddingsDto } from './dto/generate-embeddings.dto';
+import { SearchQueryDto } from './dto/search-query.dto';
+import { Public } from '../common/decorators/public.decorator';
 import type { Response } from 'express';
 
 @Controller('ai')
 export class AIController {
+    private readonly logger = new Logger(AIController.name);
+
     constructor(
         private readonly aiService: AIService,
         private readonly jobsService: JobsService,
         private readonly searchService: SearchService,
     ) { }
 
-    // ... existing sync endpoints ...
-
     @Post('generate')
-    async generatePost(@Body() body: { topic: string; outline?: string }) {
-        if (!body.topic) {
-            throw new BadRequestException('Topic is required');
-        }
-        const content = await this.aiService.generatePostContent(body.topic, body.outline);
+    async generatePost(@Body() generatePostDto: GeneratePostDto) {
+        this.logger.log(`Generating post for topic: ${generatePostDto.topic}`);
+        const content = await this.aiService.generatePostContent(
+            generatePostDto.topic,
+            generatePostDto.outline,
+        );
         return { content };
     }
 
-    // Streaming endpoint
     @Post('generate/stream')
-    async generatePostStream(@Body() body: { topic: string }, @Res() res: Response) {
-        if (!body.topic) {
-            throw new BadRequestException('Topic is required');
-        }
+    async generatePostStream(
+        @Body() generatePostDto: GeneratePostDto,
+        @Res() res: Response,
+    ) {
+        this.logger.log(`Streaming post generation for topic: ${generatePostDto.topic}`);
+
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
 
         try {
-            const stream = await this.aiService.generatePostContentStream(body.topic);
+            const stream = await this.aiService.generatePostContentStream(generatePostDto.topic);
             stream.pipe(res);
         } catch (error) {
-            console.error(error);
+            this.logger.error('Stream generation failed', error);
             res.status(500).json({ error: 'Failed to generate stream' });
         }
     }
 
     @Post('seo')
-    async generateSeo(@Body() body: { content: string }) {
-        return this.aiService.generateSeo(body.content);
+    async generateSeo(@Body() generateSeoDto: GenerateSeoDto) {
+        this.logger.log('Generating SEO metadata');
+        return this.aiService.generateSeo(generateSeoDto.content);
     }
 
     @Post('tags')
-    async generateTags(@Body() body: { content: string }) {
-        const tags = await this.aiService.generateTags(body.content);
+    async generateTags(@Body() generateSeoDto: GenerateSeoDto) {
+        this.logger.log('Generating tags');
+        const tags = await this.aiService.generateTags(generateSeoDto.content);
         return { tags };
     }
 
-    // --- Search ---
-
+    @Public()
     @Get('search')
-    async search(@Query('q') query: string, @Query('limit') limit: string) {
-        if (!query) {
-            throw new BadRequestException('Query is required');
-        }
-        return this.searchService.search(query, limit ? parseInt(limit) : 5);
+    async search(@Query() searchQueryDto: SearchQueryDto) {
+        this.logger.log(`Searching for: ${searchQueryDto.q}`);
+        return this.searchService.search(searchQueryDto.q, searchQueryDto.limit);
     }
 
     // --- Background Job Endpoints ---
 
     @Post('queue/generate')
-    async queueGeneratePost(@Body() body: { topic: string; outline?: string }) {
-        const job = await this.jobsService.addArticleJob(body.topic, body.outline);
+    async queueGeneratePost(@Body() generatePostDto: GeneratePostDto) {
+        this.logger.log(`Queueing article generation for topic: ${generatePostDto.topic}`);
+        const job = await this.jobsService.addArticleJob(
+            generatePostDto.topic,
+            generatePostDto.outline,
+        );
         return { jobId: job.id, queue: 'article-queue' };
     }
 
     @Post('queue/seo')
-    async queueSeo(@Body() body: { content: string }) {
-        const job = await this.jobsService.addSeoJob(body.content);
+    async queueSeo(@Body() generateSeoDto: GenerateSeoDto) {
+        this.logger.log('Queueing SEO generation');
+        const job = await this.jobsService.addSeoJob(generateSeoDto.content);
         return { jobId: job.id, queue: 'seo-queue' };
     }
 
     @Post('queue/embeddings')
-    async queueEmbeddings(@Body() body: { content: string; postId: string }) {
-        if (!body.postId || !body.content) {
-            throw new BadRequestException('Content and postId are required');
-        }
-        const job = await this.jobsService.addEmbeddingsJob(body.content, body.postId);
+    async queueEmbeddings(@Body() generateEmbeddingsDto: GenerateEmbeddingsDto) {
+        this.logger.log(`Queueing embeddings for post: ${generateEmbeddingsDto.postId}`);
+        const job = await this.jobsService.addEmbeddingsJob(
+            generateEmbeddingsDto.content,
+            generateEmbeddingsDto.postId,
+        );
         return { jobId: job.id, queue: 'seo-queue' };
     }
 

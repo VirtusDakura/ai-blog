@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { NavMain } from "@/components/dashboard/nav-main"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { BookOpen, FileText, Home, Image as ImageIcon, Settings } from "lucide-react"
@@ -42,5 +43,3 @@ export function AppSidebar({ className }: { className?: string }) {
         </div>
     )
 }
-
-import Link from "next/link"

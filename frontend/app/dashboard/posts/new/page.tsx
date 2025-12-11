@@ -1,44 +1,84 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { TiptapEditor } from "@/components/editor/tiptap-editor"
 import ImageUpload from "@/components/ui/image-upload"
-import { ArrowLeft, Wand2, Loader2 } from "lucide-react"
+import { ArrowLeft, Wand2, Loader2, Save } from "lucide-react"
 import Link from "next/link"
-import { useAI } from "@/hooks/use-api"
+import { useAI, useCreatePost, usePublishPost } from "@/hooks/use-api"
 
 export default function NewPostPage() {
+    const router = useRouter()
     const [title, setTitle] = useState("")
     const [coverImage, setCoverImage] = useState("")
     const [content, setContent] = useState("")
-    const [isSubmitting, setIsSubmitting] = useState(false)
 
-    // Use the custom hook
+    // API hooks
     const { generateArticle } = useAI()
+    const createPost = useCreatePost()
+    const publishPost = usePublishPost()
+
     const isGenerating = generateArticle.isPending
+    const isSaving = createPost.isPending || publishPost.isPending
 
     const handleGenerate = async () => {
-        if (!title) return alert("Please enter a title first")
+        if (!title) {
+            alert("Please enter a title first")
+            return
+        }
 
         try {
             const data = await generateArticle.mutateAsync({ topic: title })
             setContent(data.content)
         } catch (error) {
             console.error(error)
-            alert("Failed to generate content")
+            alert("Failed to generate content. Please try again.")
         }
     }
 
-    const handleSave = () => {
-        setIsSubmitting(true)
-        console.log("Saving post:", { title, content, coverImage })
-        setTimeout(() => {
-            setIsSubmitting(false)
-            alert("Post saved (mock)!")
-        }, 1000)
+    const handleSaveDraft = async () => {
+        if (!title) {
+            alert("Please enter a title")
+            return
+        }
+
+        try {
+            await createPost.mutateAsync({
+                title,
+                content,
+                coverImage: coverImage || undefined,
+            })
+            alert("Draft saved successfully!")
+            router.push("/dashboard")
+        } catch (error) {
+            console.error(error)
+            alert("Failed to save draft. Please try again.")
+        }
+    }
+
+    const handlePublish = async () => {
+        if (!title) {
+            alert("Please enter a title")
+            return
+        }
+
+        try {
+            const post = await createPost.mutateAsync({
+                title,
+                content,
+                coverImage: coverImage || undefined,
+            })
+            await publishPost.mutateAsync(post.id)
+            alert("Post published successfully!")
+            router.push("/dashboard")
+        } catch (error) {
+            console.error(error)
+            alert("Failed to publish. Please try again.")
+        }
     }
 
     return (
@@ -53,9 +93,23 @@ export default function NewPostPage() {
                     <h2 className="text-2xl font-bold tracking-tight">Create New Post</h2>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline">Discard</Button>
-                    <Button onClick={handleSave} disabled={isSubmitting}>
-                        {isSubmitting ? "Saving..." : "Publish"}
+                    <Button
+                        variant="outline"
+                        onClick={handleSaveDraft}
+                        disabled={isSaving}
+                    >
+                        {isSaving ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <Save className="mr-2 h-4 w-4" />
+                        )}
+                        Save Draft
+                    </Button>
+                    <Button
+                        onClick={handlePublish}
+                        disabled={isSaving}
+                    >
+                        {isSaving ? "Publishing..." : "Publish"}
                     </Button>
                 </div>
             </div>

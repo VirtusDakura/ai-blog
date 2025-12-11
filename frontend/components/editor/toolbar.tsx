@@ -1,9 +1,6 @@
 "use client"
 
 import { type Editor } from "@tiptap/react"
-import StarterKit from "@tiptap/starter-kit"
-import Image from "@tiptap/extension-image"
-import Link from "@tiptap/extension-link"
 import {
     Bold,
     Heading1,
