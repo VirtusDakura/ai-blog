@@ -5,17 +5,19 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { TiptapEditor } from "@/components/editor/tiptap-editor"
+import ImageUpload from "@/components/ui/image-upload"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
 export default function NewPostPage() {
     const [title, setTitle] = useState("")
+    const [coverImage, setCoverImage] = useState("")
     const [content, setContent] = useState("")
     const [isSubmitting, setIsSubmitting] = useState(false)
 
     const handleSave = () => {
         setIsSubmitting(true)
-        console.log("Saving post:", { title, content })
+        console.log("Saving post:", { title, content, coverImage })
         setTimeout(() => {
             setIsSubmitting(false)
             alert("Post saved (mock)!")
@@ -50,6 +52,16 @@ export default function NewPostPage() {
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                 />
+
+                <div className="space-y-2">
+                    <p className="text-sm font-medium">Cover Image</p>
+                    <ImageUpload
+                        value={coverImage ? [coverImage] : []}
+                        onChange={(url) => setCoverImage(url)}
+                        onRemove={() => setCoverImage("")}
+                    />
+                </div>
+
                 <TiptapEditor content={content} onChange={setContent} />
             </div>
         </div>
