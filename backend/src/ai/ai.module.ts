@@ -5,6 +5,7 @@ import { GroqProvider } from './groq.provider';
 import { HuggingFaceProvider } from './huggingface.provider';
 import { SeoService } from './seo.service';
 import { EmbeddingsService } from './embeddings.service';
+import { SearchService } from './search.service';
 import { JobsModule } from '../jobs/jobs.module'; // Import to use JobsService
 
 @Module({
@@ -16,7 +17,8 @@ import { JobsModule } from '../jobs/jobs.module'; // Import to use JobsService
         HuggingFaceProvider,
         SeoService,
         EmbeddingsService,
+        SearchService,
     ],
-    exports: [AIService],
+    exports: [AIService, SearchService],
 })
 export class AIModule { }

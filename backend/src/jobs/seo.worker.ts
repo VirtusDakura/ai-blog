@@ -2,13 +2,17 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { Logger } from '@nestjs/common';
 import { AIService } from '../ai/ai.service';
+import { SearchService } from '../ai/search.service';
 import { SEO_QUEUE, JOB_GENERATE_SEO, JOB_GENERATE_EMBEDDINGS } from './jobs.constants';
 
 @Processor(SEO_QUEUE)
 export class SeoProcessor extends WorkerHost {
     private readonly logger = new Logger(SeoProcessor.name);
 
-    constructor(private readonly aiService: AIService) {
+    constructor(
+        private readonly aiService: AIService,
+        private readonly searchService: SearchService,
+    ) {
         super();
     }
 
@@ -32,8 +36,12 @@ export class SeoProcessor extends WorkerHost {
 
     private async handleGenerateEmbeddings(job: Job) {
         this.logger.log(`Processing Embeddings generation for job ${job.id}`);
-        const { content } = job.data;
+        const { content, postId } = job.data;
         const vector = await this.aiService.getEmbeddings(content);
-        return { vector };
+
+        // Save to DB
+        const result = await this.searchService.saveEmbedding(postId, content, vector);
+
+        return { vectorId: result.id };
     }
 }

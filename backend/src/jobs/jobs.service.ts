@@ -18,8 +18,8 @@ export class JobsService {
         return this.seoQueue.add(JOB_GENERATE_SEO, { content });
     }
 
-    async addEmbeddingsJob(content: string) {
-        return this.seoQueue.add(JOB_GENERATE_EMBEDDINGS, { content });
+    async addEmbeddingsJob(content: string, postId: string) {
+        return this.seoQueue.add(JOB_GENERATE_EMBEDDINGS, { content, postId });
     }
 
     async getJobStatus(queueName: string, jobId: string) {

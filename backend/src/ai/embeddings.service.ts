@@ -5,7 +5,7 @@ import axios from 'axios';
 export class EmbeddingsService {
     private readonly logger = new Logger(EmbeddingsService.name);
     private readonly apiKey = process.env.HF_API_TOKEN;
-    private readonly modelUrl = 'https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2';
+    private readonly modelUrl = 'https://api-inference.huggingface.co/pipeline/feature-extraction/BAAI/bge-large-en-v1.5';
 
     async generateEmbedding(text: string): Promise<number[]> {
         try {

@@ -1,6 +1,7 @@
-import { Controller, Post, Body, Res, BadRequestException, Get, Param } from '@nestjs/common';
+import { Controller, Post, Body, Res, BadRequestException, Get, Param, Query } from '@nestjs/common';
 import { AIService } from './ai.service';
 import { JobsService } from '../jobs/jobs.service';
+import { SearchService } from './search.service';
 import type { Response } from 'express';
 
 @Controller('ai')
@@ -8,6 +9,7 @@ export class AIController {
     constructor(
         private readonly aiService: AIService,
         private readonly jobsService: JobsService,
+        private readonly searchService: SearchService,
     ) { }
 
     // ... existing sync endpoints ...
@@ -48,6 +50,16 @@ export class AIController {
         return { tags };
     }
 
+    // --- Search ---
+
+    @Get('search')
+    async search(@Query('q') query: string, @Query('limit') limit: string) {
+        if (!query) {
+            throw new BadRequestException('Query is required');
+        }
+        return this.searchService.search(query, limit ? parseInt(limit) : 5);
+    }
+
     // --- Background Job Endpoints ---
 
     @Post('queue/generate')
@@ -59,6 +71,15 @@ export class AIController {
     @Post('queue/seo')
     async queueSeo(@Body() body: { content: string }) {
         const job = await this.jobsService.addSeoJob(body.content);
+        return { jobId: job.id, queue: 'seo-queue' };
+    }
+
+    @Post('queue/embeddings')
+    async queueEmbeddings(@Body() body: { content: string; postId: string }) {
+        if (!body.postId || !body.content) {
+            throw new BadRequestException('Content and postId are required');
+        }
+        const job = await this.jobsService.addEmbeddingsJob(body.content, body.postId);
         return { jobId: job.id, queue: 'seo-queue' };
     }
 

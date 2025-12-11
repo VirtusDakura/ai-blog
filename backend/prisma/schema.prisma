@@ -183,7 +183,7 @@ model AILog {
 
 model Embedding {
   id     String                @id @default(uuid())
-  vector Unsupported("vector") // Using default pgvector type
+  vector Unsupported("vector") // 1024 dims (bge-large)
 
   postId String
   post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
