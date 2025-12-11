@@ -8,31 +8,27 @@ import { TiptapEditor } from "@/components/editor/tiptap-editor"
 import ImageUpload from "@/components/ui/image-upload"
 import { ArrowLeft, Wand2, Loader2 } from "lucide-react"
 import Link from "next/link"
+import { useAI } from "@/hooks/use-api"
 
 export default function NewPostPage() {
     const [title, setTitle] = useState("")
     const [coverImage, setCoverImage] = useState("")
     const [content, setContent] = useState("")
     const [isSubmitting, setIsSubmitting] = useState(false)
-    const [isGenerating, setIsGenerating] = useState(false)
+
+    // Use the custom hook
+    const { generateArticle } = useAI()
+    const isGenerating = generateArticle.isPending
 
     const handleGenerate = async () => {
         if (!title) return alert("Please enter a title first")
-        setIsGenerating(true)
+
         try {
-            const res = await fetch("http://localhost:3001/ai/generate", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ topic: title })
-            })
-            if (!res.ok) throw new Error("Failed to generate")
-            const data = await res.json()
+            const data = await generateArticle.mutateAsync({ topic: title })
             setContent(data.content)
         } catch (error) {
             console.error(error)
             alert("Failed to generate content")
-        } finally {
-            setIsGenerating(false)
         }
     }
 
