@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { TiptapEditor } from "@/components/editor/tiptap-editor"
 import ImageUpload from "@/components/ui/image-upload"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Wand2, Loader2 } from "lucide-react"
 import Link from "next/link"
 
 export default function NewPostPage() {
@@ -14,6 +14,27 @@ export default function NewPostPage() {
     const [coverImage, setCoverImage] = useState("")
     const [content, setContent] = useState("")
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [isGenerating, setIsGenerating] = useState(false)
+
+    const handleGenerate = async () => {
+        if (!title) return alert("Please enter a title first")
+        setIsGenerating(true)
+        try {
+            const res = await fetch("http://localhost:3001/ai/generate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ topic: title })
+            })
+            if (!res.ok) throw new Error("Failed to generate")
+            const data = await res.json()
+            setContent(data.content)
+        } catch (error) {
+            console.error(error)
+            alert("Failed to generate content")
+        } finally {
+            setIsGenerating(false)
+        }
+    }
 
     const handleSave = () => {
         setIsSubmitting(true)
@@ -52,6 +73,27 @@ export default function NewPostPage() {
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                 />
+
+                <div className="flex justify-end">
+                    <Button
+                        variant="outline"
+                        onClick={handleGenerate}
+                        disabled={isGenerating || !title}
+                        type="button"
+                    >
+                        {isGenerating ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Generating...
+                            </>
+                        ) : (
+                            <>
+                                <Wand2 className="mr-2 h-4 w-4" />
+                                Auto-Generate Content
+                            </>
+                        )}
+                    </Button>
+                </div>
 
                 <div className="space-y-2">
                     <p className="text-sm font-medium">Cover Image</p>
