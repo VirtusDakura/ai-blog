@@ -3,12 +3,6 @@ generator client {
   previewFeatures = ["postgresqlExtensions"]
 }
 
-generator clientFrontend {
-  provider        = "prisma-client-js"
-  previewFeatures = ["postgresqlExtensions"]
-  output          = "../../frontend/node_modules/.prisma/client"
-}
-
 datasource db {
   provider   = "postgresql"
   extensions = [vector]
