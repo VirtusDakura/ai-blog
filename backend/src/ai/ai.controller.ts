@@ -1,10 +1,16 @@
-import { Controller, Post, Body, Res, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, Res, BadRequestException, Get, Param } from '@nestjs/common';
 import { AIService } from './ai.service';
+import { JobsService } from '../jobs/jobs.service';
 import type { Response } from 'express';
 
 @Controller('ai')
 export class AIController {
-    constructor(private readonly aiService: AIService) { }
+    constructor(
+        private readonly aiService: AIService,
+        private readonly jobsService: JobsService,
+    ) { }
+
+    // ... existing sync endpoints ...
 
     @Post('generate')
     async generatePost(@Body() body: { topic: string; outline?: string }) {
@@ -33,18 +39,39 @@ export class AIController {
 
     @Post('seo')
     async generateSeo(@Body() body: { content: string }) {
-        if (!body.content) {
-            throw new BadRequestException('Content is required');
-        }
         return this.aiService.generateSeo(body.content);
     }
 
     @Post('tags')
     async generateTags(@Body() body: { content: string }) {
-        if (!body.content) {
-            throw new BadRequestException('Content is required');
-        }
         const tags = await this.aiService.generateTags(body.content);
         return { tags };
+    }
+
+    // --- Background Job Endpoints ---
+
+    @Post('queue/generate')
+    async queueGeneratePost(@Body() body: { topic: string; outline?: string }) {
+        const job = await this.jobsService.addArticleJob(body.topic, body.outline);
+        return { jobId: job.id, queue: 'article-queue' };
+    }
+
+    @Post('queue/seo')
+    async queueSeo(@Body() body: { content: string }) {
+        const job = await this.jobsService.addSeoJob(body.content);
+        return { jobId: job.id, queue: 'seo-queue' };
+    }
+
+    @Get('queue/:queue/:id')
+    async getJobStatus(@Param('queue') queue: string, @Param('id') id: string) {
+        const job = await this.jobsService.getJobStatus(queue, id);
+        if (!job) {
+            return { status: 'not found' };
+        }
+        const state = await job.getState();
+        const result = job.returnvalue;
+        const progress = job.progress;
+
+        return { id: job.id, state, result, progress };
     }
 }

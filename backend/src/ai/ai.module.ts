@@ -5,8 +5,10 @@ import { GroqProvider } from './groq.provider';
 import { HuggingFaceProvider } from './huggingface.provider';
 import { SeoService } from './seo.service';
 import { EmbeddingsService } from './embeddings.service';
+import { JobsModule } from '../jobs/jobs.module'; // Import to use JobsService
 
 @Module({
+    imports: [JobsModule],
     controllers: [AIController],
     providers: [
         AIService,
