@@ -1,14 +1,149 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
+  provider   = "postgresql"
+  extensions = [vector]
+}
+
+enum RoleType {
+  USER
+  ADMIN
+  EDITOR
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  AUDIO
+  DOCUMENT
+}
+
+model User {
+  id       String @id @default(uuid())
+  email    String @unique
+  password String
+
+  firstName String?
+  lastName  String?
+  bio       String?
+  avatarUrl String?
+
+  role RoleType @default(USER)
+
+  posts    Post[]
+  comments Comment[]
+  aiLogs   AILog[]
+  media    Media[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@map("users")
+}
+
+model Post {
+  id         String  @id @default(uuid())
+  title      String
+  slug       String  @unique
+  content    String  @db.Text
+  excerpt    String?
+  coverImage String?
+
+  publishedAt DateTime?
+  isPublished Boolean   @default(false)
+
+  seoTitle       String?
+  seoDescription String?
+  seoKeywords    String[]
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+
+  comments   Comment[]
+  media      Media[]
+  embeddings Embedding[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@map("posts")
+}
+
+model Comment {
+  id      String @id @default(uuid())
+  content String @db.Text
+
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+
+  parentId String?
+  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies  Comment[] @relation("CommentReplies")
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@map("comments")
+}
+
+model Media {
+  id       String    @id @default(uuid())
+  url      String
+  filename String
+  mimeType String?
+  size     Int?
+  type     MediaType @default(IMAGE)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  postId String?
+  post   Post?   @relation(fields: [postId], references: [id])
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@map("media")
+}
+
+model AILog {
+  id         String @id @default(uuid())
+  action     String // e.g. "generate_post", "summarize"
+  model      String // e.g. "gpt-4", "claude-3"
+  prompt     String @db.Text
+  response   String @db.Text
+  tokensUsed Int?
+  cost       Float? // Estimated cost
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("ai_logs")
+}
+
+model Embedding {
+  id     String                @id @default(uuid())
+  vector Unsupported("vector") // Using default pgvector type
+
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  chunkIndex Int? // If content is split into chunks
+  content    String? // The text chunk content
+
+  createdAt DateTime @default(now())
+
+  @@map("embeddings")
 }
