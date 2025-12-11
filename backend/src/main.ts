@@ -1,3 +1,4 @@
+import 'dotenv/config'; // Load environment variables first
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe, Logger } from '@nestjs/common';

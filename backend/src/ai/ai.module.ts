@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { AIService } from './ai.service';
 import { AIController } from './ai.controller';
 import { GroqProvider } from './groq.provider';
@@ -10,7 +10,7 @@ import { JobsModule } from '../jobs/jobs.module';
 import { PrismaService } from '../prisma.service';
 
 @Module({
-    imports: [JobsModule],
+    imports: [forwardRef(() => JobsModule)],
     controllers: [AIController],
     providers: [
         AIService,

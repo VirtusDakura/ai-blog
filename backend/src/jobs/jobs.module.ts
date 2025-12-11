@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { ArticleProcessor } from './article.worker';
 import { SeoProcessor } from './seo.worker';
@@ -25,7 +25,7 @@ const defaultJobOptions = {
 
 @Module({
     imports: [
-        AIModule,
+        forwardRef(() => AIModule),
         BullModule.registerQueue(
             {
                 name: ARTICLE_QUEUE,
