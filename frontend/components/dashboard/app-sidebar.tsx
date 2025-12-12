@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { NavMain } from "@/components/dashboard/nav-main"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { BookOpen, FileText, Home, Image as ImageIcon, Settings } from "lucide-react"
+import { BookOpen, FileText, Home, Image as ImageIcon, Settings, Sparkles, BarChart3 } from "lucide-react"
 
 const sidebarItems = [
     {
@@ -17,9 +17,19 @@ const sidebarItems = [
         icon: FileText,
     },
     {
+        title: "AI Tools",
+        href: "/dashboard/ai",
+        icon: Sparkles,
+    },
+    {
         title: "Media",
         href: "/dashboard/media",
         icon: ImageIcon,
+    },
+    {
+        title: "Analytics",
+        href: "/dashboard/analytics",
+        icon: BarChart3,
     },
     {
         title: "Settings",
@@ -43,3 +53,4 @@ export function AppSidebar({ className }: { className?: string }) {
         </div>
     )
 }
+

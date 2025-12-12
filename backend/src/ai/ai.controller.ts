@@ -110,4 +110,35 @@ export class AIController {
 
         return { id: job.id, state, result, progress };
     }
+
+    // --- Additional AI Endpoints ---
+
+    @Post('ideas')
+    async generateIdeas(@Body() body: { niche?: string; count?: number }) {
+        this.logger.log(`Generating blog ideas${body.niche ? ` for niche: ${body.niche}` : ''}`);
+        const ideas = await this.aiService.generateBlogIdeas(body.niche, body.count);
+        return { ideas };
+    }
+
+    @Post('rewrite')
+    async rewriteContent(@Body() body: { content: string; style?: string }) {
+        this.logger.log('Rewriting content');
+        const rewritten = await this.aiService.rewriteContent(body.content, body.style);
+        return { content: rewritten };
+    }
+
+    @Post('expand')
+    async expandContent(@Body() body: { content: string }) {
+        this.logger.log('Expanding content');
+        const expanded = await this.aiService.expandContent(body.content);
+        return { content: expanded };
+    }
+
+    @Post('summarize')
+    async summarizeContent(@Body() body: { content: string }) {
+        this.logger.log('Summarizing content');
+        const summary = await this.aiService.summarizeContentWithAI(body.content);
+        return { summary };
+    }
 }
+

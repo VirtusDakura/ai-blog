@@ -11,12 +11,16 @@ export interface Post {
     coverImage: string | null;
     isPublished: boolean;
     publishedAt: string | null;
+    seoTitle?: string | null;
+    seoDescription?: string | null;
+    seoKeywords?: string[];
     authorId: string;
     author?: {
         id: string;
         firstName: string | null;
         lastName: string | null;
         email: string;
+        avatarUrl?: string | null;
     };
     createdAt: string;
     updatedAt: string;
@@ -281,4 +285,96 @@ export function useAI() {
         generateTags,
         isLoading: generatePost.isPending || generateSeo.isPending || generateTags.isPending,
     };
+}
+
+// ==================== COMMENT TYPES & HOOKS ====================
+
+export interface Comment {
+    id: string;
+    content: string;
+    postId: string;
+    authorId: string;
+    parentId: string | null;
+    author: {
+        id: string;
+        firstName: string | null;
+        lastName: string | null;
+        avatarUrl: string | null;
+    };
+    replies?: Comment[];
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface CommentsResponse {
+    data: Comment[];
+    meta: {
+        total: number;
+        skip: number;
+        take: number;
+        hasMore: boolean;
+    };
+}
+
+export interface CreateCommentInput {
+    content: string;
+    postId: string;
+    parentId?: string;
+}
+
+// Hook to fetch comments for a post
+export function useComments(postId: string) {
+    return useQuery({
+        queryKey: ['comments', postId],
+        queryFn: () => fetchAPI<CommentsResponse>(`/comments/post/${postId}`),
+        enabled: !!postId,
+        staleTime: 60 * 1000, // 1 minute
+    });
+}
+
+// Hook to create a comment
+export function useCreateComment() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (data: CreateCommentInput) =>
+            fetchAPI<Comment>('/comments', {
+                method: 'POST',
+                body: JSON.stringify(data),
+            }),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['comments', variables.postId] });
+        },
+    });
+}
+
+// Hook to update a comment
+export function useUpdateComment() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ id, content, postId }: { id: string; content: string; postId: string }) =>
+            fetchAPI<Comment>(`/comments/${id}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ content }),
+            }),
+        onSuccess: (_, { postId }) => {
+            queryClient.invalidateQueries({ queryKey: ['comments', postId] });
+        },
+    });
+}
+
+// Hook to delete a comment
+export function useDeleteComment() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ id, postId }: { id: string; postId: string }) =>
+            fetchAPI<void>(`/comments/${id}`, {
+                method: 'DELETE',
+            }),
+        onSuccess: (_, { postId }) => {
+            queryClient.invalidateQueries({ queryKey: ['comments', postId] });
+        },
+    });
 }

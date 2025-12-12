@@ -12,6 +12,7 @@ import { PostsModule } from './posts/posts.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { CommentsModule } from './comments/comments.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
     UsersModule,
     AIModule,
     JobsModule,
+    CommentsModule,
   ],
   controllers: [AppController],
   providers: [

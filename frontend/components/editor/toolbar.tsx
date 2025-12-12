@@ -13,6 +13,7 @@ import {
     Quote,
     Sparkles,
     Strikethrough,
+    Loader2,
 } from "lucide-react"
 
 import { Toggle } from "@/components/ui/toggle"
@@ -23,9 +24,10 @@ interface ToolbarProps {
     editor: Editor | null
     onImageUpload?: () => void
     onAIAutocomplete?: () => void
+    isGenerating?: boolean
 }
 
-export function EditorToolbar({ editor, onImageUpload, onAIAutocomplete }: ToolbarProps) {
+export function EditorToolbar({ editor, onImageUpload, onAIAutocomplete, isGenerating }: ToolbarProps) {
     if (!editor) {
         return null
     }
@@ -120,10 +122,21 @@ export function EditorToolbar({ editor, onImageUpload, onAIAutocomplete }: Toolb
 
             <Separator orientation="vertical" className="h-6 mx-1" />
 
-            <Button variant="ghost" size="sm" onClick={onAIAutocomplete} className="h-8 gap-1 px-2 text-purple-500 hover:text-purple-600">
-                <Sparkles className="h-4 w-4" />
-                <span className="text-xs font-bold">AI</span>
+            <Button
+                variant="ghost"
+                size="sm"
+                onClick={onAIAutocomplete}
+                disabled={isGenerating}
+                className="h-8 gap-1 px-2 text-violet-500 hover:text-violet-600 disabled:opacity-50"
+            >
+                {isGenerating ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                    <Sparkles className="h-4 w-4" />
+                )}
+                <span className="text-xs font-bold">{isGenerating ? "..." : "AI"}</span>
             </Button>
         </div>
     )
 }
+
