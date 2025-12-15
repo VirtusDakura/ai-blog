@@ -43,7 +43,23 @@ function LoginForm() {
             if (result?.error) {
                 setError("Invalid email or password")
             } else {
-                router.push("/dashboard")
+                // Check if user has completed onboarding
+                const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+                try {
+                    const res = await fetch(`${API_URL}/blog/status`, {
+                        credentials: 'include',
+                    })
+                    const data = await res.json()
+
+                    if (data.hasCompletedOnboarding) {
+                        router.push("/dashboard")
+                    } else {
+                        router.push("/onboarding")
+                    }
+                } catch {
+                    // If check fails, default to dashboard (onboarding can handle redirects)
+                    router.push("/dashboard")
+                }
                 router.refresh()
             }
         } catch (err) {

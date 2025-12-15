@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -66,13 +67,28 @@ export default function RegisterPage() {
                 throw new Error(data.message || "Registration failed")
             }
 
-            router.push("/login?registered=true")
+            // Auto-login after successful registration
+            const signInResult = await signIn("credentials", {
+                email: formData.email,
+                password: formData.password,
+                redirect: false,
+            })
+
+            if (signInResult?.error) {
+                // If auto-login fails, redirect to login page
+                router.push("/login?registered=true")
+            } else {
+                // Redirect to onboarding for first-time setup
+                router.push("/onboarding")
+                router.refresh()
+            }
         } catch (err: any) {
             setError(err.message || "An error occurred. Please try again.")
         } finally {
             setIsLoading(false)
         }
     }
+
 
     // Password strength indicators
     const passwordStrength = {
@@ -257,11 +273,11 @@ export default function RegisterPage() {
                                                 <div
                                                     key={level}
                                                     className={`h-1 flex-1 rounded-full transition-all ${strengthScore >= level
-                                                            ? strengthScore <= 1 ? 'bg-red-500'
-                                                                : strengthScore === 2 ? 'bg-orange-500'
-                                                                    : strengthScore === 3 ? 'bg-yellow-500'
-                                                                        : 'bg-green-500'
-                                                            : 'bg-border'
+                                                        ? strengthScore <= 1 ? 'bg-red-500'
+                                                            : strengthScore === 2 ? 'bg-orange-500'
+                                                                : strengthScore === 3 ? 'bg-yellow-500'
+                                                                    : 'bg-green-500'
+                                                        : 'bg-border'
                                                         }`}
                                                 />
                                             ))}

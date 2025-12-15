@@ -126,15 +126,28 @@ export default function OnboardingPage() {
         setIsLoading(true)
         try {
             const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
-            // Save blog settings
-            await fetch(`${API_URL}/blog/setup`, {
+            // Save blog settings and mark onboarding as completed
+            const res = await fetch(`${API_URL}/blog/setup`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData),
+                credentials: 'include',
+                body: JSON.stringify({
+                    ...formData,
+                    onboardingCompleted: true,
+                }),
             })
+
+            if (!res.ok) {
+                throw new Error("Failed to save blog settings")
+            }
+
             router.push("/dashboard?welcome=true")
+            router.refresh()
         } catch (error) {
             console.error("Onboarding error:", error)
+            // Even if API fails, redirect to dashboard
+            // The user can complete setup later
+            router.push("/dashboard")
         } finally {
             setIsLoading(false)
         }

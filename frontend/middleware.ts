@@ -16,7 +16,7 @@ export default withAuth(
     }
 );
 
-// Protect dashboard routes
+// Protect dashboard and onboarding routes - require authentication
 export const config = {
-    matcher: ["/dashboard/:path*"],
+    matcher: ["/dashboard/:path*", "/onboarding"],
 };
