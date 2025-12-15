@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { BookOpen, Loader2, Mail, Lock, ArrowRight, Sparkles, Eye, EyeOff } from "lucide-react"
 
-export default function LoginPage() {
+function LoginForm() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const [email, setEmail] = useState("")
@@ -243,5 +243,25 @@ export default function LoginPage() {
                 </div>
             </div>
         </div>
+    )
+}
+
+// Loading fallback for Suspense
+function LoginFormLoading() {
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-background">
+            <div className="flex flex-col items-center gap-4">
+                <Loader2 className="h-8 w-8 animate-spin text-violet-500" />
+                <p className="text-muted-foreground">Loading...</p>
+            </div>
+        </div>
+    )
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={<LoginFormLoading />}>
+            <LoginForm />
+        </Suspense>
     )
 }
