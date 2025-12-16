@@ -2,6 +2,8 @@ import { Controller, Post, Body, Get, HttpCode, HttpStatus } from '@nestjs/commo
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { Public } from '../common/decorators/public.decorator';
 
 @Controller('auth')
@@ -36,6 +38,23 @@ export class AuthController {
             message: 'Login successful',
             user,
         };
+    }
+
+    @Public()
+    @Post('forgot-password')
+    @HttpCode(HttpStatus.OK)
+    async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+        return this.authService.forgotPassword(forgotPasswordDto.email);
+    }
+
+    @Public()
+    @Post('reset-password')
+    @HttpCode(HttpStatus.OK)
+    async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+        return this.authService.resetPassword(
+            resetPasswordDto.token,
+            resetPasswordDto.password,
+        );
     }
 
     @Public()

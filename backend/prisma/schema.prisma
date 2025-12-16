@@ -32,17 +32,23 @@ model User {
   email    String @unique
   password String
 
-  firstName String?
-  lastName  String?
-  bio       String?
-  avatarUrl String?
+  firstName          String?
+  lastName           String?
+  displayName        String?
+  bio                String?
+  avatarUrl          String?
+  timezone           String?
+  language           String?  @default("en")
+  onboardingCompleted Boolean @default(false)
 
   role RoleType @default(USER)
 
+  blog     Blog?
   posts    Post[]
   comments Comment[]
   aiLogs   AILog[]
   media    Media[]
+  passwordResets PasswordReset[]
   
   accounts      Account[]
   sessions      Session[]
@@ -94,6 +100,47 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("verification_tokens")
+}
+
+model PasswordReset {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@index([token])
+  @@index([userId])
+  @@map("password_resets")
+}
+
+model Blog {
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+  subdomain   String  @unique
+  customDomain String?
+  
+  category    String?
+  theme       String  @default("minimal")
+  colorScheme String  @default("violet")
+  
+  logoUrl     String?
+  faviconUrl  String?
+  
+  userId      String  @unique
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([subdomain])
+  @@index([userId])
+  @@map("blogs")
 }
 
 model Post {
