@@ -1,6 +1,8 @@
 "use client"
 
+import { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { usePosts } from "@/hooks/use-api"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,8 +16,32 @@ import {
     TrendingUp,
     Sparkles,
     ArrowRight,
-    BookOpen
+    BookOpen,
+    Globe,
+    Palette,
+    Settings,
+    Users,
+    BarChart3,
+    CheckCircle2,
+    Circle,
+    ExternalLink,
+    Copy,
+    Rocket,
+    Zap,
+    PenTool,
+    Image,
+    Share2,
+    X
 } from "lucide-react"
+
+// Getting Started Tasks
+const GETTING_STARTED_TASKS = [
+    { id: "profile", label: "Complete your profile", icon: Users, href: "/dashboard/settings" },
+    { id: "first-post", label: "Write your first post", icon: PenTool, href: "/dashboard/posts/new" },
+    { id: "add-image", label: "Add a featured image", icon: Image, href: "/dashboard/media" },
+    { id: "publish", label: "Publish your first article", icon: Rocket, href: "/dashboard/posts" },
+    { id: "share", label: "Share your blog", icon: Share2, href: "#" },
+]
 
 function StatsCardSkeleton() {
     return (
@@ -51,30 +77,166 @@ function formatDate(dateString: string) {
     })
 }
 
-export default function DashboardPage() {
+// Mock blog data - in production this would come from API/context
+function useBlogData() {
+    const [blogData, setBlogData] = useState({
+        blogName: "My Awesome Blog",
+        subdomain: "my-awesome-blog",
+        category: "tech",
+        displayName: "Alex Writer",
+        colorScheme: "violet",
+        theme: "minimal",
+        isNew: true, // First time on dashboard
+    })
+
+    useEffect(() => {
+        // In production, fetch from API
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+        fetch(`${API_URL}/blog/settings`, { credentials: 'include' })
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.blogName) {
+                    setBlogData(prev => ({ ...prev, ...data }))
+                }
+            })
+            .catch(() => {
+                // Use defaults
+            })
+    }, [])
+
+    return blogData
+}
+
+function DashboardContent() {
+    const searchParams = useSearchParams()
+    const isWelcome = searchParams.get("welcome") === "true"
+    const [showWelcome, setShowWelcome] = useState(isWelcome)
+    const [completedTasks, setCompletedTasks] = useState<string[]>([])
+    const [copiedDomain, setCopiedDomain] = useState(false)
+
+    const blogData = useBlogData()
     const { data, isLoading } = usePosts({ take: 5 })
 
     const totalPosts = data?.meta.total || 0
     const publishedPosts = data?.data.filter(p => p.isPublished).length || 0
     const draftPosts = data?.data.filter(p => !p.isPublished).length || 0
 
+    const fullDomain = `${blogData.subdomain}.ai-blog.vercel.app`
+
+    const toggleTask = (taskId: string) => {
+        setCompletedTasks(prev =>
+            prev.includes(taskId)
+                ? prev.filter(id => id !== taskId)
+                : [...prev, taskId]
+        )
+    }
+
+    const copyDomain = () => {
+        navigator.clipboard.writeText(`https://${fullDomain}`)
+        setCopiedDomain(true)
+        setTimeout(() => setCopiedDomain(false), 2000)
+    }
+
+    const completionPercentage = Math.round((completedTasks.length / GETTING_STARTED_TASKS.length) * 100)
+
     return (
         <div className="space-y-8">
-            {/* Page Header */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-                    <p className="text-muted-foreground mt-1">
-                        Welcome back! Here&apos;s what&apos;s happening with your blog.
-                    </p>
+            {/* Welcome Banner - Only shown after onboarding */}
+            {showWelcome && (
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 p-8 text-white">
+                    {/* Background Effects */}
+                    <div className="absolute inset-0">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                        <div className="absolute bottom-0 left-0 w-48 h-48 bg-pink-500/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+                    </div>
+
+                    {/* Close Button */}
+                    <button
+                        onClick={() => setShowWelcome(false)}
+                        className="absolute top-4 right-4 p-2 rounded-full hover:bg-white/10 transition-colors"
+                    >
+                        <X className="h-5 w-5" />
+                    </button>
+
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
+                                <Rocket className="h-8 w-8" />
+                            </div>
+                            <div>
+                                <h2 className="text-2xl font-bold">Welcome to {blogData.blogName}! 🎉</h2>
+                                <p className="text-white/80">Your blog is ready. Let's make it awesome!</p>
+                            </div>
+                        </div>
+
+                        {/* Blog URL */}
+                        <div className="flex items-center gap-3 mt-6">
+                            <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/20 backdrop-blur-sm">
+                                <Globe className="h-4 w-4" />
+                                <span className="font-mono text-sm">{fullDomain}</span>
+                            </div>
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={copyDomain}
+                                className="bg-white/20 hover:bg-white/30 border-0"
+                            >
+                                {copiedDomain ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                asChild
+                                className="bg-white/20 hover:bg-white/30 border-0"
+                            >
+                                <a href={`https://${fullDomain}`} target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink className="h-4 w-4" />
+                                </a>
+                            </Button>
+                        </div>
+                    </div>
                 </div>
-                <Button asChild size="lg" className="group">
-                    <Link href="/dashboard/posts/new">
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        New Post
-                        <ArrowRight className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </Link>
-                </Button>
+            )}
+
+            {/* Page Header with Blog Info */}
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-500/25">
+                        <BookOpen className="h-8 w-8" />
+                    </div>
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight">{blogData.blogName}</h1>
+                        <div className="flex items-center gap-2 mt-1">
+                            <Globe className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-muted-foreground font-mono text-sm">{fullDomain}</span>
+                            <button
+                                onClick={copyDomain}
+                                className="p-1 hover:bg-muted rounded transition-colors"
+                            >
+                                {copiedDomain ? (
+                                    <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                                ) : (
+                                    <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div className="flex items-center gap-3">
+                    <Button variant="outline" size="lg" asChild>
+                        <a href={`https://${fullDomain}`} target="_blank" rel="noopener noreferrer">
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Blog
+                        </a>
+                    </Button>
+                    <Button asChild size="lg" className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 shadow-lg shadow-violet-500/25 group">
+                        <Link href="/dashboard/posts/new">
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            New Post
+                            <ArrowRight className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </Link>
+                    </Button>
+                </div>
             </div>
 
             {/* Stats Grid */}
@@ -88,68 +250,80 @@ export default function DashboardPage() {
                     </>
                 ) : (
                     <>
-                        <Card className="border-l-4 border-l-primary">
+                        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-violet-500/10 via-violet-500/5 to-transparent">
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-violet-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium text-muted-foreground">
                                     Total Posts
                                 </CardTitle>
-                                <FileText className="h-4 w-4 text-muted-foreground" />
+                                <div className="p-2 rounded-lg bg-violet-500/10">
+                                    <FileText className="h-4 w-4 text-violet-500" />
+                                </div>
                             </CardHeader>
                             <CardContent>
                                 <div className="text-3xl font-bold">{totalPosts}</div>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                    All your content in one place
+                                    All your content
                                 </p>
                             </CardContent>
                         </Card>
 
-                        <Card className="border-l-4 border-l-green-500">
+                        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-green-500/10 via-green-500/5 to-transparent">
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium text-muted-foreground">
                                     Published
                                 </CardTitle>
-                                <Eye className="h-4 w-4 text-green-500" />
+                                <div className="p-2 rounded-lg bg-green-500/10">
+                                    <Eye className="h-4 w-4 text-green-500" />
+                                </div>
                             </CardHeader>
                             <CardContent>
                                 <div className="text-3xl font-bold text-green-600 dark:text-green-400">
                                     {publishedPosts}
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                    Live and visible to readers
+                                    Live articles
                                 </p>
                             </CardContent>
                         </Card>
 
-                        <Card className="border-l-4 border-l-amber-500">
+                        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent">
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium text-muted-foreground">
                                     Drafts
                                 </CardTitle>
-                                <Clock className="h-4 w-4 text-amber-500" />
+                                <div className="p-2 rounded-lg bg-amber-500/10">
+                                    <Clock className="h-4 w-4 text-amber-500" />
+                                </div>
                             </CardHeader>
                             <CardContent>
                                 <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">
                                     {draftPosts}
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                    Work in progress
+                                    In progress
                                 </p>
                             </CardContent>
                         </Card>
 
-                        <Card className="border-l-4 border-l-violet-500">
+                        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent">
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                                    AI Powered
+                                    Page Views
                                 </CardTitle>
-                                <Sparkles className="h-4 w-4 text-violet-500" />
+                                <div className="p-2 rounded-lg bg-blue-500/10">
+                                    <BarChart3 className="h-4 w-4 text-blue-500" />
+                                </div>
                             </CardHeader>
                             <CardContent>
-                                <div className="text-3xl font-bold text-violet-600 dark:text-violet-400">
-                                    ∞
+                                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                                    0
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                    Unlimited AI generations
+                                    This month
                                 </p>
                             </CardContent>
                         </Card>
@@ -158,9 +332,58 @@ export default function DashboardPage() {
             </div>
 
             {/* Content Grid */}
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-6 lg:grid-cols-3">
+                {/* Getting Started Checklist */}
+                <Card className="lg:col-span-1 border-violet-500/20 bg-gradient-to-br from-violet-500/5 to-transparent">
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="flex items-center gap-2">
+                                <Zap className="h-5 w-5 text-violet-500" />
+                                Getting Started
+                            </CardTitle>
+                            <span className="text-sm font-medium text-violet-600 dark:text-violet-400">
+                                {completionPercentage}%
+                            </span>
+                        </div>
+                        <CardDescription>
+                            Complete these steps to set up your blog
+                        </CardDescription>
+                        {/* Progress Bar */}
+                        <div className="mt-3 h-2 rounded-full bg-muted overflow-hidden">
+                            <div
+                                className="h-full bg-gradient-to-r from-violet-500 to-purple-600 transition-all duration-500"
+                                style={{ width: `${completionPercentage}%` }}
+                            />
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                        {GETTING_STARTED_TASKS.map((task) => (
+                            <button
+                                key={task.id}
+                                onClick={() => toggleTask(task.id)}
+                                className={`
+                                    w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all
+                                    ${completedTasks.includes(task.id)
+                                        ? "bg-green-500/10 text-green-600 dark:text-green-400"
+                                        : "hover:bg-muted"
+                                    }
+                                `}
+                            >
+                                {completedTasks.includes(task.id) ? (
+                                    <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
+                                ) : (
+                                    <Circle className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                                )}
+                                <span className={completedTasks.includes(task.id) ? "line-through" : ""}>
+                                    {task.label}
+                                </span>
+                            </button>
+                        ))}
+                    </CardContent>
+                </Card>
+
                 {/* Recent Posts */}
-                <Card>
+                <Card className="lg:col-span-2">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <BookOpen className="h-5 w-5" />
@@ -178,11 +401,19 @@ export default function DashboardPage() {
                                 <PostItemSkeleton />
                             </div>
                         ) : data?.data.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-8 text-center">
-                                <FileText className="h-12 w-12 text-muted-foreground/30 mb-3" />
-                                <p className="text-muted-foreground">No posts yet</p>
-                                <Button variant="link" asChild className="mt-2">
-                                    <Link href="/dashboard/posts/new">Create your first post</Link>
+                            <div className="flex flex-col items-center justify-center py-12 text-center">
+                                <div className="p-4 rounded-2xl bg-muted/50 mb-4">
+                                    <PenTool className="h-12 w-12 text-muted-foreground/50" />
+                                </div>
+                                <h3 className="font-semibold mb-1">No posts yet</h3>
+                                <p className="text-muted-foreground mb-4">
+                                    Start creating amazing content with AI assistance
+                                </p>
+                                <Button asChild className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700">
+                                    <Link href="/dashboard/posts/new">
+                                        <Sparkles className="mr-2 h-4 w-4" />
+                                        Create Your First Post
+                                    </Link>
                                 </Button>
                             </div>
                         ) : (
@@ -191,10 +422,10 @@ export default function DashboardPage() {
                                     <Link
                                         key={post.id}
                                         href={`/dashboard/posts/${post.id}/edit`}
-                                        className="flex items-center justify-between py-3 px-2 -mx-2 rounded-lg hover:bg-muted transition-colors group"
+                                        className="flex items-center justify-between py-3 px-3 -mx-3 rounded-xl hover:bg-muted transition-colors group"
                                     >
                                         <div className="flex-1 min-w-0">
-                                            <p className="font-medium truncate group-hover:text-primary transition-colors">
+                                            <p className="font-medium truncate group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
                                                 {post.title}
                                             </p>
                                             <p className="text-sm text-muted-foreground">
@@ -209,102 +440,105 @@ export default function DashboardPage() {
                             </div>
                         )}
                     </CardContent>
-                    <CardFooter className="border-t pt-4">
-                        <Button variant="outline" className="w-full" asChild>
-                            <Link href="/dashboard/posts">
-                                View All Posts
-                                <ArrowRight className="ml-2 h-4 w-4" />
-                            </Link>
-                        </Button>
-                    </CardFooter>
-                </Card>
-
-                {/* Quick Actions */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <TrendingUp className="h-5 w-5" />
-                            Quick Actions
-                        </CardTitle>
-                        <CardDescription>
-                            Common tasks to boost productivity
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                        <Link
-                            href="/dashboard/posts/new"
-                            className="flex items-center gap-4 p-4 rounded-lg border hover:bg-muted transition-colors group"
-                        >
-                            <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                                <PlusCircle className="h-5 w-5" />
-                            </div>
-                            <div className="flex-1">
-                                <p className="font-medium group-hover:text-primary transition-colors">
-                                    Create New Post
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                    Write a new article with AI assistance
-                                </p>
-                            </div>
-                            <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </Link>
-
-                        <Link
-                            href="/dashboard/posts"
-                            className="flex items-center gap-4 p-4 rounded-lg border hover:bg-muted transition-colors group"
-                        >
-                            <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
-                                <FileText className="h-5 w-5" />
-                            </div>
-                            <div className="flex-1">
-                                <p className="font-medium group-hover:text-primary transition-colors">
-                                    Manage Posts
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                    Edit, publish, or delete your content
-                                </p>
-                            </div>
-                            <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </Link>
-
-                        <Link
-                            href="/blog"
-                            className="flex items-center gap-4 p-4 rounded-lg border hover:bg-muted transition-colors group"
-                        >
-                            <div className="p-2 rounded-lg bg-green-500/10 text-green-500">
-                                <Eye className="h-5 w-5" />
-                            </div>
-                            <div className="flex-1">
-                                <p className="font-medium group-hover:text-primary transition-colors">
-                                    View Blog
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                    See your public blog page
-                                </p>
-                            </div>
-                            <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </Link>
-
-                        <Link
-                            href="/dashboard/settings"
-                            className="flex items-center gap-4 p-4 rounded-lg border hover:bg-muted transition-colors group"
-                        >
-                            <div className="p-2 rounded-lg bg-violet-500/10 text-violet-500">
-                                <Sparkles className="h-5 w-5" />
-                            </div>
-                            <div className="flex-1">
-                                <p className="font-medium group-hover:text-primary transition-colors">
-                                    AI Settings
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                    Configure AI generation preferences
-                                </p>
-                            </div>
-                            <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </Link>
-                    </CardContent>
+                    {data?.data && data.data.length > 0 && (
+                        <CardFooter className="border-t pt-4">
+                            <Button variant="outline" className="w-full" asChild>
+                                <Link href="/dashboard/posts">
+                                    View All Posts
+                                    <ArrowRight className="ml-2 h-4 w-4" />
+                                </Link>
+                            </Button>
+                        </CardFooter>
+                    )}
                 </Card>
             </div>
+
+            {/* Quick Actions Grid */}
+            <div>
+                <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <Link
+                        href="/dashboard/posts/new"
+                        className="flex flex-col items-center gap-3 p-6 rounded-2xl border hover:border-violet-500/50 hover:bg-violet-500/5 transition-all group"
+                    >
+                        <div className="p-4 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-500/25 group-hover:scale-110 transition-transform">
+                            <PlusCircle className="h-6 w-6" />
+                        </div>
+                        <div className="text-center">
+                            <p className="font-semibold">New Post</p>
+                            <p className="text-sm text-muted-foreground">Create with AI</p>
+                        </div>
+                    </Link>
+
+                    <Link
+                        href="/dashboard/ai"
+                        className="flex flex-col items-center gap-3 p-6 rounded-2xl border hover:border-violet-500/50 hover:bg-violet-500/5 transition-all group"
+                    >
+                        <div className="p-4 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 text-white shadow-lg shadow-pink-500/25 group-hover:scale-110 transition-transform">
+                            <Sparkles className="h-6 w-6" />
+                        </div>
+                        <div className="text-center">
+                            <p className="font-semibold">AI Tools</p>
+                            <p className="text-sm text-muted-foreground">Generate content</p>
+                        </div>
+                    </Link>
+
+                    <Link
+                        href="/dashboard/analytics"
+                        className="flex flex-col items-center gap-3 p-6 rounded-2xl border hover:border-violet-500/50 hover:bg-violet-500/5 transition-all group"
+                    >
+                        <div className="p-4 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 text-white shadow-lg shadow-blue-500/25 group-hover:scale-110 transition-transform">
+                            <BarChart3 className="h-6 w-6" />
+                        </div>
+                        <div className="text-center">
+                            <p className="font-semibold">Analytics</p>
+                            <p className="text-sm text-muted-foreground">View statistics</p>
+                        </div>
+                    </Link>
+
+                    <Link
+                        href="/dashboard/settings"
+                        className="flex flex-col items-center gap-3 p-6 rounded-2xl border hover:border-violet-500/50 hover:bg-violet-500/5 transition-all group"
+                    >
+                        <div className="p-4 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg shadow-amber-500/25 group-hover:scale-110 transition-transform">
+                            <Settings className="h-6 w-6" />
+                        </div>
+                        <div className="text-center">
+                            <p className="font-semibold">Settings</p>
+                            <p className="text-sm text-muted-foreground">Configure blog</p>
+                        </div>
+                    </Link>
+                </div>
+            </div>
         </div>
+    )
+}
+
+// Loading fallback
+function DashboardLoading() {
+    return (
+        <div className="space-y-8">
+            <div className="flex items-center gap-4">
+                <Skeleton className="h-14 w-14 rounded-2xl" />
+                <div>
+                    <Skeleton className="h-8 w-48" />
+                    <Skeleton className="h-4 w-64 mt-2" />
+                </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <StatsCardSkeleton />
+                <StatsCardSkeleton />
+                <StatsCardSkeleton />
+                <StatsCardSkeleton />
+            </div>
+        </div>
+    )
+}
+
+export default function DashboardPage() {
+    return (
+        <Suspense fallback={<DashboardLoading />}>
+            <DashboardContent />
+        </Suspense>
     )
 }
