@@ -4,7 +4,7 @@ import { useState, Suspense } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { usePosts } from "@/hooks/use-api"
-import { useBlog, getBlogUrl } from "@/contexts/blog-context"
+import { useBlog, getBlogUrl, getDisplayDomain } from "@/contexts/blog-context"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -94,9 +94,10 @@ function DashboardContent() {
     const publishedPosts = data?.data.filter(p => p.isPublished).length || 0
     const draftPosts = data?.data.filter(p => !p.isPublished).length || 0
 
-    // Get the full blog URL
+    // Get the full blog URL (links to /blog during development)
     const blogUrl = getBlogUrl(blog.subdomain, blog.customDomain)
-    const displayDomain = blog.customDomain || `${blog.subdomain}.ai-blog.vercel.app`
+    // Display domain shows what the subdomain will be when deployed
+    const displayDomain = getDisplayDomain(blog.subdomain, blog.customDomain)
 
     const toggleTask = (taskId: string) => {
         setCompletedTasks(prev =>
@@ -165,17 +166,15 @@ function DashboardContent() {
                             </div>
                         </div>
 
-                        {/* Blog URL - Fully Functional */}
+                        {/* Blog URL - Links to /blog page */}
                         <div className="flex items-center gap-3 mt-6">
-                            <a
-                                href={blogUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                            <Link
+                                href="/blog"
                                 className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors"
                             >
                                 <Globe className="h-4 w-4" />
                                 <span className="font-mono text-sm">{displayDomain}</span>
-                            </a>
+                            </Link>
                             <Button
                                 variant="secondary"
                                 size="sm"
@@ -190,9 +189,9 @@ function DashboardContent() {
                                 asChild
                                 className="bg-white/20 hover:bg-white/30 border-0"
                             >
-                                <a href={blogUrl} target="_blank" rel="noopener noreferrer">
+                                <Link href="/blog">
                                     <ExternalLink className="h-4 w-4" />
-                                </a>
+                                </Link>
                             </Button>
                         </div>
                     </div>
@@ -209,14 +208,12 @@ function DashboardContent() {
                         <h1 className="text-3xl font-bold tracking-tight">{blog.blogName}</h1>
                         <div className="flex items-center gap-2 mt-1">
                             <Globe className="h-4 w-4 text-muted-foreground" />
-                            <a
-                                href={blogUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                            <Link
+                                href="/blog"
                                 className="text-muted-foreground font-mono text-sm hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
                             >
                                 {displayDomain}
-                            </a>
+                            </Link>
                             <button
                                 onClick={copyDomain}
                                 className="p-1 hover:bg-muted rounded transition-colors"
@@ -228,24 +225,22 @@ function DashboardContent() {
                                     <Copy className="h-3.5 w-3.5 text-muted-foreground" />
                                 )}
                             </button>
-                            <a
-                                href={blogUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                            <Link
+                                href="/blog"
                                 className="p-1 hover:bg-muted rounded transition-colors"
                                 title="Visit Blog"
                             >
                                 <ExternalLink className="h-3.5 w-3.5 text-muted-foreground hover:text-violet-600" />
-                            </a>
+                            </Link>
                         </div>
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
                     <Button variant="outline" size="lg" asChild>
-                        <a href={blogUrl} target="_blank" rel="noopener noreferrer">
+                        <Link href="/blog">
                             <Eye className="mr-2 h-4 w-4" />
                             View Blog
-                        </a>
+                        </Link>
                     </Button>
                     <Button asChild size="lg" className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 shadow-lg shadow-violet-500/25 group">
                         <Link href="/dashboard/posts/new">

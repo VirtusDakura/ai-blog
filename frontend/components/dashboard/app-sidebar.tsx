@@ -4,7 +4,7 @@ import Link from "next/link"
 import { NavMain } from "@/components/dashboard/nav-main"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useBlog, getBlogUrl } from "@/contexts/blog-context"
+import { useBlog, getBlogUrl, getDisplayDomain } from "@/contexts/blog-context"
 import { BookOpen, FileText, Home, Image as ImageIcon, Settings, Sparkles, BarChart3, Globe, ExternalLink, ChevronDown } from "lucide-react"
 
 const sidebarItems = [
@@ -42,8 +42,10 @@ const sidebarItems = [
 
 export function AppSidebar({ className }: { className?: string }) {
     const blog = useBlog()
+    // blogUrl links to /blog during development (functional link)
     const blogUrl = getBlogUrl(blog.subdomain, blog.customDomain)
-    const displayDomain = blog.customDomain || `${blog.subdomain}.ai-blog.vercel.app`
+    // displayDomain shows what the subdomain will be when deployed (for display)
+    const displayDomain = getDisplayDomain(blog.subdomain, blog.customDomain)
 
     return (
         <div className={className}>
@@ -75,18 +77,16 @@ export function AppSidebar({ className }: { className?: string }) {
                 )}
             </div>
 
-            {/* View Blog Button - Fully Functional */}
+            {/* View Blog Button - Links to /blog page (functional) */}
             <div className="px-4 py-3 lg:px-6 border-b">
-                <a
-                    href={blogUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                <Link
+                    href="/blog"
                     className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-muted/50 hover:bg-violet-500/10 hover:text-violet-600 dark:hover:text-violet-400 text-sm font-medium transition-colors group"
                 >
                     <Globe className="h-4 w-4" />
                     View Blog
                     <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </a>
+                </Link>
             </div>
 
             {/* Navigation */}
