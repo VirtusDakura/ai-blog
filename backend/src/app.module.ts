@@ -11,6 +11,7 @@ import { JobsModule } from './jobs/jobs.module';
 import { PostsModule } from './posts/posts.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { BlogModule } from './blog/blog.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { CommentsModule } from './comments/comments.module';
 
@@ -56,6 +57,7 @@ import { CommentsModule } from './comments/comments.module';
     AuthModule,
     PostsModule,
     UsersModule,
+    BlogModule,
     AIModule,
     JobsModule,
     CommentsModule,
