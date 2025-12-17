@@ -1,13 +1,20 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { NavMain } from "@/components/dashboard/nav-main"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useBlog, getBlogUrl, getDisplayDomain } from "@/contexts/blog-context"
-import { BookOpen, FileText, Home, Image as ImageIcon, Settings, Sparkles, BarChart3, Globe, ExternalLink, ChevronDown, AlertCircle } from "lucide-react"
+import {
+    BookOpen, FileText, Home, Image as ImageIcon, Settings, Sparkles, BarChart3,
+    Globe, ExternalLink, ChevronDown, AlertCircle, MessageSquare, Palette,
+    DollarSign, Users, Tag, Layout, Search, Shield, Download, Megaphone,
+    Code, Rss, Bell
+} from "lucide-react"
 
-const sidebarItems = [
+// Main navigation items
+const mainNavItems = [
     {
         title: "Overview",
         href: "/dashboard",
@@ -19,9 +26,9 @@ const sidebarItems = [
         icon: FileText,
     },
     {
-        title: "AI Tools",
-        href: "/dashboard/ai",
-        icon: Sparkles,
+        title: "Pages",
+        href: "/dashboard/pages",
+        icon: Layout,
     },
     {
         title: "Media",
@@ -29,16 +36,118 @@ const sidebarItems = [
         icon: ImageIcon,
     },
     {
+        title: "Comments",
+        href: "/dashboard/comments",
+        icon: MessageSquare,
+    },
+]
+
+// Content & SEO items
+const contentNavItems = [
+    {
+        title: "Categories",
+        href: "/dashboard/categories",
+        icon: Tag,
+    },
+    {
+        title: "AI Tools",
+        href: "/dashboard/ai",
+        icon: Sparkles,
+    },
+    {
+        title: "SEO",
+        href: "/dashboard/seo",
+        icon: Search,
+    },
+]
+
+// Analytics & Growth items
+const analyticsNavItems = [
+    {
         title: "Analytics",
         href: "/dashboard/analytics",
         icon: BarChart3,
+    },
+    {
+        title: "Subscribers",
+        href: "/dashboard/subscribers",
+        icon: Users,
+    },
+]
+
+// Monetization items
+const monetizationNavItems = [
+    {
+        title: "Ads",
+        href: "/dashboard/ads",
+        icon: Megaphone,
+    },
+    {
+        title: "Monetization",
+        href: "/dashboard/monetization",
+        icon: DollarSign,
+    },
+]
+
+// Settings items
+const settingsNavItems = [
+    {
+        title: "Appearance",
+        href: "/dashboard/appearance",
+        icon: Palette,
     },
     {
         title: "Settings",
         href: "/dashboard/settings",
         icon: Settings,
     },
+    {
+        title: "Integrations",
+        href: "/dashboard/integrations",
+        icon: Code,
+    },
 ]
+
+interface NavSectionProps {
+    title: string
+    items: typeof mainNavItems
+}
+
+function NavSection({ title, items }: NavSectionProps) {
+    const pathname = usePathname()
+
+    return (
+        <div className="mb-4">
+            <h4 className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                {title}
+            </h4>
+            <nav className="space-y-1">
+                {items.map((item) => {
+                    const isActive = pathname === item.href ||
+                        (item.href !== "/dashboard" && pathname.startsWith(item.href))
+                    const Icon = item.icon
+
+                    return (
+                        <Link
+                            key={item.href}
+                            href={item.href}
+                            className={`
+                                flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                                ${isActive
+                                    ? "bg-violet-500/10 text-violet-600 dark:text-violet-400"
+                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                }
+                            `}
+                        >
+                            <Icon className="h-4 w-4 flex-shrink-0" />
+                            {item.title}
+                        </Link>
+                    )
+                })}
+            </nav>
+        </div>
+    )
+}
 
 export function AppSidebar({ className }: { className?: string }) {
     const blog = useBlog()
@@ -103,20 +212,30 @@ export function AppSidebar({ className }: { className?: string }) {
             </div>
 
             {/* Navigation */}
-            <ScrollArea className="flex-1 px-3 py-3">
-                <NavMain items={sidebarItems} />
+            <ScrollArea className="flex-1 px-3 py-4">
+                <NavSection title="Content" items={mainNavItems} />
+                <NavSection title="Organize" items={contentNavItems} />
+                <NavSection title="Growth" items={analyticsNavItems} />
+                <NavSection title="Monetize" items={monetizationNavItems} />
+                <NavSection title="Customize" items={settingsNavItems} />
             </ScrollArea>
 
-            {/* Upgrade Banner */}
+            {/* Pro Banner */}
             <div className="p-4 lg:p-6 border-t">
                 <div className="p-4 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 border border-violet-500/20">
                     <div className="flex items-center gap-2 mb-2">
                         <Sparkles className="h-4 w-4 text-violet-500" />
                         <span className="text-sm font-semibold">AI-Powered</span>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                        Unlimited AI content generation included
+                    <p className="text-xs text-muted-foreground mb-3">
+                        Generate content, SEO, and more with AI
                     </p>
+                    <Link
+                        href="/dashboard/ai"
+                        className="block w-full text-center px-3 py-1.5 text-xs font-medium rounded-md bg-violet-500 text-white hover:bg-violet-600 transition-colors"
+                    >
+                        Try AI Tools
+                    </Link>
                 </div>
             </div>
         </div>
