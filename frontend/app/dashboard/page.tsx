@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
+import { useState, Suspense } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { usePosts } from "@/hooks/use-api"
+import { useBlog, getBlogUrl } from "@/contexts/blog-context"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -31,7 +32,8 @@ import {
     PenTool,
     Image,
     Share2,
-    X
+    X,
+    Loader2
 } from "lucide-react"
 
 // Getting Started Tasks
@@ -77,36 +79,6 @@ function formatDate(dateString: string) {
     })
 }
 
-// Mock blog data - in production this would come from API/context
-function useBlogData() {
-    const [blogData, setBlogData] = useState({
-        blogName: "My Awesome Blog",
-        subdomain: "my-awesome-blog",
-        category: "tech",
-        displayName: "Alex Writer",
-        colorScheme: "violet",
-        theme: "minimal",
-        isNew: true, // First time on dashboard
-    })
-
-    useEffect(() => {
-        // In production, fetch from API
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
-        fetch(`${API_URL}/blog/settings`, { credentials: 'include' })
-            .then(res => res.json())
-            .then(data => {
-                if (data && data.blogName) {
-                    setBlogData(prev => ({ ...prev, ...data }))
-                }
-            })
-            .catch(() => {
-                // Use defaults
-            })
-    }, [])
-
-    return blogData
-}
-
 function DashboardContent() {
     const searchParams = useSearchParams()
     const isWelcome = searchParams.get("welcome") === "true"
@@ -114,14 +86,17 @@ function DashboardContent() {
     const [completedTasks, setCompletedTasks] = useState<string[]>([])
     const [copiedDomain, setCopiedDomain] = useState(false)
 
-    const blogData = useBlogData()
+    // Use the blog context for real data
+    const blog = useBlog()
     const { data, isLoading } = usePosts({ take: 5 })
 
     const totalPosts = data?.meta.total || 0
     const publishedPosts = data?.data.filter(p => p.isPublished).length || 0
     const draftPosts = data?.data.filter(p => !p.isPublished).length || 0
 
-    const fullDomain = `${blogData.subdomain}.ai-blog.vercel.app`
+    // Get the full blog URL
+    const blogUrl = getBlogUrl(blog.subdomain, blog.customDomain)
+    const displayDomain = blog.customDomain || `${blog.subdomain}.ai-blog.vercel.app`
 
     const toggleTask = (taskId: string) => {
         setCompletedTasks(prev =>
@@ -132,12 +107,33 @@ function DashboardContent() {
     }
 
     const copyDomain = () => {
-        navigator.clipboard.writeText(`https://${fullDomain}`)
+        navigator.clipboard.writeText(blogUrl)
         setCopiedDomain(true)
         setTimeout(() => setCopiedDomain(false), 2000)
     }
 
     const completionPercentage = Math.round((completedTasks.length / GETTING_STARTED_TASKS.length) * 100)
+
+    // Show loading state while fetching blog data
+    if (blog.isLoading) {
+        return (
+            <div className="space-y-8">
+                <div className="flex items-center gap-4">
+                    <Skeleton className="h-14 w-14 rounded-2xl" />
+                    <div>
+                        <Skeleton className="h-8 w-48" />
+                        <Skeleton className="h-4 w-64 mt-2" />
+                    </div>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <StatsCardSkeleton />
+                    <StatsCardSkeleton />
+                    <StatsCardSkeleton />
+                    <StatsCardSkeleton />
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="space-y-8">
@@ -164,17 +160,22 @@ function DashboardContent() {
                                 <Rocket className="h-8 w-8" />
                             </div>
                             <div>
-                                <h2 className="text-2xl font-bold">Welcome to {blogData.blogName}! 🎉</h2>
+                                <h2 className="text-2xl font-bold">Welcome to {blog.blogName}! 🎉</h2>
                                 <p className="text-white/80">Your blog is ready. Let's make it awesome!</p>
                             </div>
                         </div>
 
-                        {/* Blog URL */}
+                        {/* Blog URL - Fully Functional */}
                         <div className="flex items-center gap-3 mt-6">
-                            <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/20 backdrop-blur-sm">
+                            <a
+                                href={blogUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors"
+                            >
                                 <Globe className="h-4 w-4" />
-                                <span className="font-mono text-sm">{fullDomain}</span>
-                            </div>
+                                <span className="font-mono text-sm">{displayDomain}</span>
+                            </a>
                             <Button
                                 variant="secondary"
                                 size="sm"
@@ -189,7 +190,7 @@ function DashboardContent() {
                                 asChild
                                 className="bg-white/20 hover:bg-white/30 border-0"
                             >
-                                <a href={`https://${fullDomain}`} target="_blank" rel="noopener noreferrer">
+                                <a href={blogUrl} target="_blank" rel="noopener noreferrer">
                                     <ExternalLink className="h-4 w-4" />
                                 </a>
                             </Button>
@@ -205,13 +206,21 @@ function DashboardContent() {
                         <BookOpen className="h-8 w-8" />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">{blogData.blogName}</h1>
+                        <h1 className="text-3xl font-bold tracking-tight">{blog.blogName}</h1>
                         <div className="flex items-center gap-2 mt-1">
                             <Globe className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-muted-foreground font-mono text-sm">{fullDomain}</span>
+                            <a
+                                href={blogUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-muted-foreground font-mono text-sm hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
+                            >
+                                {displayDomain}
+                            </a>
                             <button
                                 onClick={copyDomain}
                                 className="p-1 hover:bg-muted rounded transition-colors"
+                                title="Copy URL"
                             >
                                 {copiedDomain ? (
                                     <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
@@ -219,12 +228,21 @@ function DashboardContent() {
                                     <Copy className="h-3.5 w-3.5 text-muted-foreground" />
                                 )}
                             </button>
+                            <a
+                                href={blogUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-1 hover:bg-muted rounded transition-colors"
+                                title="Visit Blog"
+                            >
+                                <ExternalLink className="h-3.5 w-3.5 text-muted-foreground hover:text-violet-600" />
+                            </a>
                         </div>
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
                     <Button variant="outline" size="lg" asChild>
-                        <a href={`https://${fullDomain}`} target="_blank" rel="noopener noreferrer">
+                        <a href={blogUrl} target="_blank" rel="noopener noreferrer">
                             <Eye className="mr-2 h-4 w-4" />
                             View Blog
                         </a>
@@ -517,20 +535,8 @@ function DashboardContent() {
 // Loading fallback
 function DashboardLoading() {
     return (
-        <div className="space-y-8">
-            <div className="flex items-center gap-4">
-                <Skeleton className="h-14 w-14 rounded-2xl" />
-                <div>
-                    <Skeleton className="h-8 w-48" />
-                    <Skeleton className="h-4 w-64 mt-2" />
-                </div>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <StatsCardSkeleton />
-                <StatsCardSkeleton />
-                <StatsCardSkeleton />
-                <StatsCardSkeleton />
-            </div>
+        <div className="flex items-center justify-center min-h-[400px]">
+            <Loader2 className="h-8 w-8 animate-spin text-violet-500" />
         </div>
     )
 }
