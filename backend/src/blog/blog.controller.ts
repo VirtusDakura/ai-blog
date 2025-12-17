@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, Query, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Put, Get, Body, Param, Query, HttpCode, HttpStatus } from '@nestjs/common';
 import { BlogService } from './blog.service';
 import { BlogSetupDto } from './dto/blog-setup.dto';
 import { Public } from '../common/decorators/public.decorator';
@@ -29,6 +29,12 @@ export class BlogController {
     }
 
     @Public()
+    @Put('settings')
+    async updateBlogSettings(@Body() body: { userId: string; settings: any }) {
+        return this.blogService.updateBlogSettings(body.userId, body.settings);
+    }
+
+    @Public()
     @Get('status')
     async getBlogStatus(@Query('userId') userId: string) {
         if (!userId) {
@@ -45,6 +51,44 @@ export class BlogController {
     @Get('check-subdomain')
     async checkSubdomain(@Query('subdomain') subdomain: string, @Query('userId') userId?: string) {
         return this.blogService.checkSubdomainAvailability(subdomain, userId);
+    }
+
+    // Donations endpoints
+    @Public()
+    @Get('donations')
+    async getDonations(@Query('userId') userId: string) {
+        if (!userId) return { donations: [], total: 0, count: 0 };
+        return this.blogService.getDonations(userId);
+    }
+
+    @Public()
+    @Post('donations')
+    @HttpCode(HttpStatus.CREATED)
+    async createDonation(@Body() body: {
+        userId: string;
+        amount: number;
+        message?: string;
+        donorName?: string;
+        donorEmail?: string;
+    }) {
+        return this.blogService.createDonation(body.userId, body);
+    }
+
+    // Integrations endpoints
+    @Public()
+    @Get('integrations/:blogId')
+    async getIntegrations(@Param('blogId') blogId: string) {
+        return this.blogService.getIntegrations(blogId);
+    }
+
+    @Public()
+    @Put('integrations/:blogId/:name')
+    async updateIntegration(
+        @Param('blogId') blogId: string,
+        @Param('name') name: string,
+        @Body() body: { enabled?: boolean; settings?: string }
+    ) {
+        return this.blogService.updateIntegration(blogId, name, body);
     }
 
     @Public()

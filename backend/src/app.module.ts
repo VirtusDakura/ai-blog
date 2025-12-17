@@ -5,7 +5,7 @@ import { APP_GUARD, APP_FILTER } from '@nestjs/core';
 import { BullModule } from '@nestjs/bullmq';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { PrismaService } from './prisma.service';
+import { PrismaModule } from './prisma/prisma.module';
 import { AIModule } from './ai/ai.module';
 import { JobsModule } from './jobs/jobs.module';
 import { PostsModule } from './posts/posts.module';
@@ -14,6 +14,9 @@ import { AuthModule } from './auth/auth.module';
 import { BlogModule } from './blog/blog.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { CommentsModule } from './comments/comments.module';
+import { CategoriesModule } from './categories/categories.module';
+import { PagesModule } from './pages/pages.module';
+import { SubscribersModule } from './subscribers/subscribers.module';
 
 @Module({
   imports: [
@@ -53,6 +56,9 @@ import { CommentsModule } from './comments/comments.module';
       inject: [ConfigService],
     }),
 
+    // Core modules
+    PrismaModule,
+
     // Feature modules
     AuthModule,
     PostsModule,
@@ -61,11 +67,13 @@ import { CommentsModule } from './comments/comments.module';
     AIModule,
     JobsModule,
     CommentsModule,
+    CategoriesModule,
+    PagesModule,
+    SubscribersModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
-    PrismaService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
@@ -75,6 +83,5 @@ import { CommentsModule } from './comments/comments.module';
       useClass: HttpExceptionFilter,
     },
   ],
-  exports: [PrismaService],
 })
 export class AppModule { }

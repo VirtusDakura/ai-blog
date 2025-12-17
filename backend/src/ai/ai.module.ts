@@ -7,10 +7,10 @@ import { SeoService } from './seo.service';
 import { EmbeddingsService } from './embeddings.service';
 import { SearchService } from './search.service';
 import { JobsModule } from '../jobs/jobs.module';
-import { PrismaService } from '../prisma.service';
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-    imports: [forwardRef(() => JobsModule)],
+    imports: [forwardRef(() => JobsModule), PrismaModule],
     controllers: [AIController],
     providers: [
         AIService,
@@ -19,7 +19,6 @@ import { PrismaService } from '../prisma.service';
         SeoService,
         EmbeddingsService,
         SearchService,
-        PrismaService,
     ],
     exports: [AIService, SearchService],
 })

@@ -27,6 +27,30 @@ enum MediaType {
   DOCUMENT
 }
 
+enum CommentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SPAM
+}
+
+enum PageStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum SubscriberStatus {
+  ACTIVE
+  UNSUBSCRIBED
+  BOUNCED
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENT
+}
+
 model User {
   id       String @id @default(uuid())
   email    String @unique
@@ -43,12 +67,18 @@ model User {
 
   role RoleType @default(USER)
 
-  blog     Blog?
-  posts    Post[]
-  comments Comment[]
-  aiLogs   AILog[]
-  media    Media[]
+  blog           Blog?
+  posts          Post[]
+  comments       Comment[]
+  aiLogs         AILog[]
+  media          Media[]
   passwordResets PasswordReset[]
+  pages          Page[]
+  categories     Category[]
+  tags           Tag[]
+  subscribers    Subscriber[]
+  campaigns      Campaign[]
+  donations      Donation[]
   
   accounts      Account[]
   sessions      Session[]
@@ -128,9 +158,59 @@ model Blog {
   category    String?
   theme       String  @default("minimal")
   colorScheme String  @default("violet")
+  font        String  @default("inter")
+  layout      String  @default("standard")
+  darkMode    String  @default("system")
   
   logoUrl     String?
   faviconUrl  String?
+  customCss   String? @db.Text
+  headerCode  String? @db.Text
+  footerCode  String? @db.Text
+  
+  // Privacy settings
+  isPublic         Boolean @default(true)
+  allowComments    Boolean @default(true)
+  moderateComments Boolean @default(true)
+  showAuthorBio    Boolean @default(true)
+  enableRss        Boolean @default(true)
+  allowIndexing    Boolean @default(true)
+  
+  // SEO settings
+  seoTitle         String?
+  seoDescription   String?
+  seoKeywords      String?
+  ogImage          String?
+  twitterHandle    String?
+  facebookPage     String?
+  enableSitemap    Boolean @default(true)
+  enableJsonLd     Boolean @default(true)
+  canonicalUrl     String?
+  
+  // Notification settings
+  emailOnComment    Boolean @default(true)
+  emailOnSubscriber Boolean @default(true)
+  emailDigest       String  @default("weekly")
+  
+  // Monetization settings
+  donationsEnabled     Boolean @default(false)
+  donationMessage      String?
+  suggestedAmounts     String? // JSON array
+  stripeConnected      Boolean @default(false)
+  stripeAccountId      String?
+  paypalEmail          String?
+  minimumPayout        Int     @default(50)
+  
+  // Ads settings
+  adsEnabled       Boolean @default(false)
+  adsProvider      String? // google, carbon, custom
+  adsPublisherId   String?
+  autoAds          Boolean @default(false)
+  adsTxt           String? @db.Text
+  adPlacements     String? @db.Text // JSON
+  
+  // Analytics
+  analyticsId      String?
   
   userId      String  @unique
   user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -157,6 +237,10 @@ model Post {
   seoTitle       String?
   seoDescription String?
   seoKeywords    String[]
+  
+  // Category relation
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
 
   authorId String
   author   User   @relation(fields: [authorId], references: [id])
@@ -164,26 +248,82 @@ model Post {
   comments   Comment[]
   media      Media[]
   embeddings Embedding[]
+  tags       PostTag[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   @@index([authorId])
+  @@index([categoryId])
   @@index([createdAt(sort: Desc)])
   @@index([isPublished, publishedAt(sort: Desc)])
   @@map("posts")
 }
 
+model Category {
+  id          String @id @default(uuid())
+  name        String
+  slug        String
+  description String?
+  color       String @default("#8b5cf6")
+  sortOrder   Int    @default(0)
+  
+  userId      String
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  posts       Post[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([userId, slug])
+  @@index([userId])
+  @@map("categories")
+}
+
+model Tag {
+  id     String @id @default(uuid())
+  name   String
+  
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  posts  PostTag[]
+  
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("tags")
+}
+
+model PostTag {
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  tagId  String
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  
+  @@id([postId, tagId])
+  @@map("post_tags")
+}
+
 model Comment {
-  id      String @id @default(uuid())
-  content String @db.Text
+  id      String        @id @default(uuid())
+  content String        @db.Text
+  status  CommentStatus @default(PENDING)
+  
+  // Guest comments
+  guestName  String?
+  guestEmail String?
 
   postId String
   post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
 
-  authorId String
-  author   User   @relation(fields: [authorId], references: [id])
+  // Logged in user comments
+  authorId String?
+  author   User?   @relation(fields: [authorId], references: [id])
 
   parentId String?
   parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
@@ -195,7 +335,115 @@ model Comment {
 
   @@index([postId])
   @@index([authorId])
+  @@index([status])
   @@map("comments")
+}
+
+model Page {
+  id       String     @id @default(uuid())
+  title    String
+  slug     String
+  content  String     @db.Text
+  template String     @default("default")
+  status   PageStatus @default(DRAFT)
+  isSystem Boolean    @default(false)
+  sortOrder Int       @default(0)
+  
+  // SEO
+  seoTitle       String?
+  seoDescription String?
+  
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, slug])
+  @@index([userId])
+  @@map("pages")
+}
+
+model Subscriber {
+  id     String           @id @default(uuid())
+  email  String
+  name   String?
+  status SubscriberStatus @default(ACTIVE)
+  
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  confirmedAt   DateTime?
+  unsubscribedAt DateTime?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, email])
+  @@index([userId])
+  @@index([status])
+  @@map("subscribers")
+}
+
+model Campaign {
+  id         String         @id @default(uuid())
+  subject    String
+  content    String         @db.Text
+  status     CampaignStatus @default(DRAFT)
+  
+  recipients Int @default(0)
+  opened     Int @default(0)
+  clicked    Int @default(0)
+  
+  scheduledAt DateTime?
+  sentAt      DateTime?
+  
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([status])
+  @@map("campaigns")
+}
+
+model Donation {
+  id      String @id @default(uuid())
+  amount  Float
+  message String?
+  
+  donorName  String?
+  donorEmail String?
+  
+  stripePaymentId String?
+  paypalPaymentId String?
+  
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+  @@map("donations")
+}
+
+model Integration {
+  id       String  @id @default(uuid())
+  name     String  // e.g. "google-analytics", "disqus"
+  enabled  Boolean @default(false)
+  settings String? @db.Text // JSON settings
+  
+  blogId   String
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([blogId, name])
+  @@index([blogId])
+  @@map("integrations")
 }
 
 model Media {
