@@ -8,7 +8,7 @@ export interface Toast {
     id: string
     title?: string
     description?: string
-    variant?: "default" | "success" | "error" | "warning"
+    variant?: "default" | "success" | "error" | "warning" | "destructive"
     duration?: number
 }
 
@@ -70,6 +70,7 @@ function ToastItem({ toast, onRemove }: { toast: Toast, onRemove: (id: string) =
         default: "bg-background border",
         success: "bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800",
         error: "bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800",
+        destructive: "bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800", // Same as error for now
         warning: "bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800",
     }
 
@@ -77,6 +78,7 @@ function ToastItem({ toast, onRemove }: { toast: Toast, onRemove: (id: string) =
         default: "text-foreground",
         success: "text-green-800 dark:text-green-200",
         error: "text-red-800 dark:text-red-200",
+        destructive: "text-red-800 dark:text-red-200",
         warning: "text-amber-800 dark:text-amber-200",
     }
 

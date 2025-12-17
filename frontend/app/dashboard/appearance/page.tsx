@@ -1,14 +1,16 @@
 "use client"
 
-import { useState } from "react"
-import { useBlog } from "@/contexts/blog-context"
+import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
+import { useBlogSettings, useUpdateBlogSettings } from "@/hooks/use-blog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import ImageUpload from "@/components/ui/image-upload"
+import { useToast } from "@/hooks/use-toast"
 import {
     Palette, Layout, Type, Image, Moon, Sun, Monitor, Check, Save, RefreshCw,
     Paintbrush, Layers, Eye
@@ -19,43 +21,43 @@ const THEMES = [
     {
         id: "minimal",
         name: "Minimal",
-        description: "Clean and simple design",
-        preview: "bg-white dark:bg-zinc-900",
+        description: "Cluttered-free design focused on readability",
+        preview: "bg-white dark:bg-zinc-900 border",
         colors: ["#ffffff", "#f4f4f5", "#18181b"]
     },
     {
         id: "modern",
         name: "Modern",
-        description: "Contemporary with subtle gradients",
-        preview: "bg-gradient-to-br from-slate-50 to-slate-100",
+        description: "Contemporary aesthetic with subtle gradients",
+        preview: "bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border",
         colors: ["#f8fafc", "#e2e8f0", "#1e293b"]
     },
     {
         id: "bold",
         name: "Bold",
-        description: "Vibrant colors and strong contrast",
-        preview: "bg-gradient-to-br from-violet-600 to-purple-700",
+        description: "High contrast design that makes a statement",
+        preview: "bg-zinc-950 dark:bg-black border-2 border-primary",
         colors: ["#7c3aed", "#a855f7", "#ffffff"]
     },
     {
         id: "elegant",
         name: "Elegant",
-        description: "Sophisticated with warm tones",
-        preview: "bg-gradient-to-br from-amber-50 to-orange-50",
+        description: "Sophisticated typography and warm tones",
+        preview: "bg-stone-50 dark:bg-stone-900 border",
         colors: ["#fffbeb", "#fed7aa", "#78350f"]
     },
     {
-        id: "dark",
-        name: "Dark",
-        description: "Dark mode by default",
-        preview: "bg-gradient-to-br from-zinc-900 to-black",
-        colors: ["#18181b", "#27272a", "#fafafa"]
+        id: "tech",
+        name: "Tech Blog",
+        description: "Optimized for code snippets and tutorials",
+        preview: "bg-slate-900 border border-indigo-500/30",
+        colors: ["#1e293b", "#3b82f6", "#cbd5e1"]
     },
     {
-        id: "newspaper",
-        name: "Newspaper",
-        description: "Classic editorial style",
-        preview: "bg-stone-50",
+        id: "magazine",
+        name: "Magazine",
+        description: "Grid-based layout for content-heavy sites",
+        preview: "grid grid-cols-2 gap-1 bg-gray-50 dark:bg-gray-900 p-2",
         colors: ["#fafaf9", "#d6d3d1", "#1c1917"]
     },
 ]
@@ -74,29 +76,33 @@ const COLOR_SCHEMES = [
 
 // Font options
 const FONTS = [
-    { id: "inter", name: "Inter", preview: "font-sans" },
-    { id: "georgia", name: "Georgia", preview: "font-serif" },
-    { id: "mono", name: "Mono", preview: "font-mono" },
-    { id: "system", name: "System", preview: "font-sans" },
+    { id: "inter", name: "Inter (Sans-serif)", preview: "font-sans" },
+    { id: "georgia", name: "Georgia (Serif)", preview: "font-serif" },
+    { id: "mono", name: "Monospace", preview: "font-mono" },
+    { id: "outfit", name: "Outfit (Modern Sans)", preview: "font-[family-name:var(--font-outfit)]" },
+    { id: "merriweather", name: "Merriweather (Readability)", preview: "font-serif" },
 ]
 
 // Layout options
 const LAYOUTS = [
-    { id: "standard", name: "Standard", description: "Centered content with sidebar" },
-    { id: "wide", name: "Wide", description: "Full-width content layout" },
-    { id: "magazine", name: "Magazine", description: "Grid-based magazine style" },
-    { id: "minimal", name: "Minimal", description: "Single column, focused reading" },
+    { id: "standard", name: "Standard", description: "Classic blog layout with sidebar" },
+    { id: "wide", name: "Full Width", description: "Immersive reading experience without sidebar" },
+    { id: "grid", name: "Card Grid", description: "Showcase multiple posts in a responsive grid" },
+    { id: "minimal", name: "Minimal List", description: "Clean list of posts focused on titles" },
 ]
 
 export default function AppearancePage() {
     const { data: session } = useSession()
-    const blog = useBlog()
-    const [isLoading, setIsLoading] = useState(false)
-    const [saveSuccess, setSaveSuccess] = useState(false)
+    const userId = (session?.user as any)?.id
+    const { toast } = useToast()
+
+    // Fetch blog settings
+    const { data: settings, isLoading: isLoadingSettings } = useBlogSettings(userId)
+    const updateSettings = useUpdateBlogSettings()
 
     const [appearance, setAppearance] = useState({
-        theme: blog.theme || "minimal",
-        colorScheme: blog.colorScheme || "violet",
+        theme: "minimal",
+        colorScheme: "violet",
         font: "inter",
         layout: "standard",
         darkMode: "system",
@@ -107,34 +113,64 @@ export default function AppearancePage() {
         footerCode: "",
     })
 
-    const handleSave = async () => {
-        setIsLoading(true)
-        try {
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
-            const userId = (session?.user as any)?.id
+    // Update state when settings are loaded
+    useEffect(() => {
+        if (settings) {
+            setAppearance({
+                theme: settings.theme || "minimal",
+                colorScheme: settings.colorScheme || "violet",
+                font: settings.font || "inter",
+                layout: settings.layout || "standard",
+                darkMode: settings.darkMode ? "dark" : "system",
+                customCss: settings.customCss || "",
+                logoUrl: settings.logoUrl || "",
+                faviconUrl: settings.faviconUrl || "",
+                headerCode: settings.headerCode || "",
+                footerCode: settings.footerCode || "",
+            })
+        }
+    }, [settings])
 
-            const res = await fetch(`${API_URL}/blog/setup`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    userId,
-                    blogName: blog.blogName,
-                    subdomain: blog.subdomain,
+    const handleSave = async () => {
+        if (!userId) return
+
+        try {
+            await updateSettings.mutateAsync({
+                userId,
+                settings: {
                     theme: appearance.theme,
                     colorScheme: appearance.colorScheme,
-                }),
+                    font: appearance.font,
+                    layout: appearance.layout,
+                    darkMode: appearance.darkMode === "dark",
+                    customCss: appearance.customCss,
+                    logoUrl: appearance.logoUrl,
+                    faviconUrl: appearance.faviconUrl,
+                    headerCode: appearance.headerCode,
+                    footerCode: appearance.footerCode,
+                }
             })
 
-            if (res.ok) {
-                setSaveSuccess(true)
-                blog.refetch()
-                setTimeout(() => setSaveSuccess(false), 3000)
-            }
+            toast({
+                title: "Changes saved",
+                description: "Your blog appearance has been updated successfully.",
+            })
         } catch (error) {
             console.error("Failed to save appearance:", error)
-        } finally {
-            setIsLoading(false)
+            toast({
+                title: "Error",
+                description: "Failed to save changes. Please try again.",
+                variant: "destructive",
+            })
         }
+    }
+
+    if (isLoadingSettings) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        )
     }
 
     return (
@@ -144,22 +180,16 @@ export default function AppearancePage() {
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Appearance</h1>
                     <p className="text-muted-foreground">
-                        Customize how your blog looks
+                        Customize how your blog looks and feels
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    {saveSuccess && (
-                        <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-500/10 text-green-600">
-                            <Check className="h-4 w-4" />
-                            <span className="text-sm font-medium">Saved!</span>
-                        </div>
-                    )}
                     <Button variant="outline">
                         <Eye className="mr-2 h-4 w-4" />
-                        Preview
+                        Preview Blog
                     </Button>
-                    <Button onClick={handleSave} disabled={isLoading}>
-                        {isLoading ? (
+                    <Button onClick={handleSave} disabled={updateSettings.isPending}>
+                        {updateSettings.isPending ? (
                             <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
                             <Save className="mr-2 h-4 w-4" />
@@ -170,7 +200,7 @@ export default function AppearancePage() {
             </div>
 
             <Tabs defaultValue="theme" className="space-y-6">
-                <TabsList>
+                <TabsList className="bg-muted/50 p-1">
                     <TabsTrigger value="theme" className="gap-2">
                         <Palette className="h-4 w-4" />
                         Theme
@@ -199,7 +229,7 @@ export default function AppearancePage() {
                         <CardHeader>
                             <CardTitle>Choose Theme</CardTitle>
                             <CardDescription>
-                                Select a pre-designed theme for your blog
+                                Select a pre-designed theme base to start with
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -209,30 +239,21 @@ export default function AppearancePage() {
                                         key={theme.id}
                                         onClick={() => setAppearance(prev => ({ ...prev, theme: theme.id }))}
                                         className={`
-                                            relative p-4 rounded-xl border-2 text-left transition-all
+                                            relative p-4 rounded-xl border-2 text-left transition-all hover:scale-[1.02]
                                             ${appearance.theme === theme.id
-                                                ? "border-violet-500 ring-2 ring-violet-500/20"
+                                                ? "border-violet-500 ring-2 ring-violet-500/20 bg-violet-500/5"
                                                 : "border-border hover:border-violet-500/50"
                                             }
                                         `}
                                     >
                                         {appearance.theme === theme.id && (
-                                            <div className="absolute top-2 right-2 p-1 rounded-full bg-violet-500 text-white">
+                                            <div className="absolute top-2 right-2 p-1 rounded-full bg-violet-500 text-white z-10">
                                                 <Check className="h-3 w-3" />
                                             </div>
                                         )}
-                                        <div className={`h-24 rounded-lg mb-3 ${theme.preview}`} />
+                                        <div className={`h-24 rounded-lg mb-3 shadow-sm ${theme.preview}`} />
                                         <h4 className="font-semibold">{theme.name}</h4>
-                                        <p className="text-sm text-muted-foreground">{theme.description}</p>
-                                        <div className="flex gap-1 mt-2">
-                                            {theme.colors.map((color, i) => (
-                                                <div
-                                                    key={i}
-                                                    className="w-4 h-4 rounded-full border"
-                                                    style={{ backgroundColor: color }}
-                                                />
-                                            ))}
-                                        </div>
+                                        <p className="text-sm text-muted-foreground line-clamp-2">{theme.description}</p>
                                     </button>
                                 ))}
                             </div>
@@ -241,9 +262,9 @@ export default function AppearancePage() {
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Dark Mode</CardTitle>
+                            <CardTitle>Color Mode</CardTitle>
                             <CardDescription>
-                                Choose how dark mode is handled
+                                Set the default color mode for your visitors
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -259,7 +280,7 @@ export default function AppearancePage() {
                                         className={`
                                             flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all
                                             ${appearance.darkMode === mode.id
-                                                ? "border-violet-500 bg-violet-500/5"
+                                                ? "border-violet-500 bg-violet-500/5 text-violet-600"
                                                 : "border-border hover:border-violet-500/50"
                                             }
                                         `}
@@ -279,7 +300,7 @@ export default function AppearancePage() {
                         <CardHeader>
                             <CardTitle>Accent Color</CardTitle>
                             <CardDescription>
-                                Choose your blog's primary accent color
+                                Choose your blog's primary accent color used for buttons, links, and highlights
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -289,19 +310,24 @@ export default function AppearancePage() {
                                         key={scheme.id}
                                         onClick={() => setAppearance(prev => ({ ...prev, colorScheme: scheme.id }))}
                                         className={`
-                                            flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all
+                                            flex items-center gap-2 px-4 py-3 rounded-full border-2 transition-all
                                             ${appearance.colorScheme === scheme.id
-                                                ? "border-current ring-2 ring-current/20"
-                                                : "border-transparent hover:border-current/30"
+                                                ? "border-current ring-2 ring-current/20 bg-muted/50"
+                                                : "border-transparent hover:border-muted-foreground/20 bg-muted/20"
                                             }
                                         `}
-                                        style={{ borderColor: appearance.colorScheme === scheme.id ? scheme.color : undefined }}
+                                        style={{
+                                            borderColor: appearance.colorScheme === scheme.id ? scheme.color : undefined,
+                                            color: appearance.colorScheme === scheme.id ? scheme.color : undefined
+                                        }}
                                     >
                                         <div
-                                            className="w-5 h-5 rounded-full"
+                                            className="w-5 h-5 rounded-full shadow-sm"
                                             style={{ backgroundColor: scheme.color }}
                                         />
-                                        <span className="font-medium">{scheme.name}</span>
+                                        <span className={`font-medium ${appearance.colorScheme === scheme.id ? '' : 'text-foreground'}`}>
+                                            {scheme.name}
+                                        </span>
                                         {appearance.colorScheme === scheme.id && (
                                             <Check className="h-4 w-4" style={{ color: scheme.color }} />
                                         )}
@@ -313,35 +339,18 @@ export default function AppearancePage() {
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Custom Colors</CardTitle>
+                            <CardTitle>Custom CSS</CardTitle>
                             <CardDescription>
-                                Fine-tune your color palette
+                                Add custom CSS to further customize your blog's appearance (Advanced)
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid gap-4 md:grid-cols-3">
-                                <div className="space-y-2">
-                                    <Label>Primary Color</Label>
-                                    <div className="flex gap-2">
-                                        <Input type="color" className="w-12 h-10 p-1" defaultValue="#8b5cf6" />
-                                        <Input defaultValue="#8b5cf6" className="font-mono" />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Secondary Color</Label>
-                                    <div className="flex gap-2">
-                                        <Input type="color" className="w-12 h-10 p-1" defaultValue="#a855f7" />
-                                        <Input defaultValue="#a855f7" className="font-mono" />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Background Color</Label>
-                                    <div className="flex gap-2">
-                                        <Input type="color" className="w-12 h-10 p-1" defaultValue="#ffffff" />
-                                        <Input defaultValue="#ffffff" className="font-mono" />
-                                    </div>
-                                </div>
-                            </div>
+                        <CardContent>
+                            <Textarea
+                                value={appearance.customCss}
+                                onChange={(e) => setAppearance(prev => ({ ...prev, customCss: e.target.value }))}
+                                placeholder={`/* Add your custom CSS here */\n.my-custom-class {\n  border: 1px solid red;\n}`}
+                                className="font-mono text-sm min-h-[200px]"
+                            />
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -352,7 +361,7 @@ export default function AppearancePage() {
                         <CardHeader>
                             <CardTitle>Font Family</CardTitle>
                             <CardDescription>
-                                Choose fonts for your blog
+                                Choose the primary font for your blog content
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -361,17 +370,17 @@ export default function AppearancePage() {
                                     key={font.id}
                                     onClick={() => setAppearance(prev => ({ ...prev, font: font.id }))}
                                     className={`
-                                        w-full flex items-center justify-between p-4 rounded-lg border-2 transition-all
+                                        w-full flex items-center justify-between p-4 rounded-lg border-2 transition-all text-left
                                         ${appearance.font === font.id
-                                            ? "border-violet-500"
+                                            ? "border-violet-500 bg-violet-500/5"
                                             : "border-border hover:border-violet-500/50"
                                         }
                                     `}
                                 >
                                     <div>
                                         <p className={`text-lg font-semibold ${font.preview}`}>{font.name}</p>
-                                        <p className={`text-sm text-muted-foreground ${font.preview}`}>
-                                            The quick brown fox jumps over the lazy dog.
+                                        <p className={`text-sm text-muted-foreground mt-1 ${font.preview}`}>
+                                            The quick brown fox jumps over the lazy dog. 1234567890
                                         </p>
                                     </div>
                                     {appearance.font === font.id && (
@@ -387,9 +396,9 @@ export default function AppearancePage() {
                 <TabsContent value="layout" className="space-y-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Page Layout</CardTitle>
+                            <CardTitle>Post Layout</CardTitle>
                             <CardDescription>
-                                Choose how your blog content is displayed
+                                Choose how your blog posts are displayed on the home page
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -401,7 +410,7 @@ export default function AppearancePage() {
                                         className={`
                                             p-4 rounded-xl border-2 text-left transition-all
                                             ${appearance.layout === layout.id
-                                                ? "border-violet-500"
+                                                ? "border-violet-500 bg-violet-500/5"
                                                 : "border-border hover:border-violet-500/50"
                                             }
                                         `}
@@ -418,6 +427,35 @@ export default function AppearancePage() {
                             </div>
                         </CardContent>
                     </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Header & Footer Code</CardTitle>
+                            <CardDescription>
+                                Add custom scripts that run in the head or body (e.g., Google Analytics, custom widgets)
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label>Header Code (Inside &lt;head&gt;)</Label>
+                                <Textarea
+                                    value={appearance.headerCode}
+                                    onChange={(e) => setAppearance(prev => ({ ...prev, headerCode: e.target.value }))}
+                                    placeholder="<script>...</script>"
+                                    className="font-mono text-xs min-h-[100px]"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Footer Code (Before &lt;/body&gt;)</Label>
+                                <Textarea
+                                    value={appearance.footerCode}
+                                    onChange={(e) => setAppearance(prev => ({ ...prev, footerCode: e.target.value }))}
+                                    placeholder="<script>...</script>"
+                                    className="font-mono text-xs min-h-[100px]"
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
                 </TabsContent>
 
                 {/* Branding */}
@@ -426,21 +464,15 @@ export default function AppearancePage() {
                         <CardHeader>
                             <CardTitle>Logo</CardTitle>
                             <CardDescription>
-                                Upload your blog's logo
+                                Upload your blog's logo. Recommended size: 200x50px transparent PNG.
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="flex items-center gap-6">
-                                <div className="h-20 w-20 rounded-xl bg-muted flex items-center justify-center">
-                                    <Image className="h-8 w-8 text-muted-foreground" />
-                                </div>
-                                <div>
-                                    <Button variant="outline">Upload Logo</Button>
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                        PNG, JPG or SVG. Recommended 200x200px.
-                                    </p>
-                                </div>
-                            </div>
+                            <ImageUpload
+                                value={appearance.logoUrl ? [appearance.logoUrl] : []}
+                                onChange={(url) => setAppearance(prev => ({ ...prev, logoUrl: url }))}
+                                onRemove={() => setAppearance(prev => ({ ...prev, logoUrl: "" }))}
+                            />
                         </CardContent>
                     </Card>
 
@@ -448,37 +480,14 @@ export default function AppearancePage() {
                         <CardHeader>
                             <CardTitle>Favicon</CardTitle>
                             <CardDescription>
-                                The small icon shown in browser tabs
+                                The small icon shown in browser tabs. Recommended size: 32x32px or 64x64px.
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="flex items-center gap-6">
-                                <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center">
-                                    <Layers className="h-5 w-5 text-muted-foreground" />
-                                </div>
-                                <div>
-                                    <Button variant="outline">Upload Favicon</Button>
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                        ICO, PNG or SVG. 32x32px or 64x64px.
-                                    </p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Custom CSS</CardTitle>
-                            <CardDescription>
-                                Add custom CSS to further customize your blog
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Textarea
-                                value={appearance.customCss}
-                                onChange={(e) => setAppearance(prev => ({ ...prev, customCss: e.target.value }))}
-                                placeholder={`/* Add your custom CSS here */\n.my-class {\n  color: #8b5cf6;\n}`}
-                                className="font-mono text-sm min-h-[200px]"
+                            <ImageUpload
+                                value={appearance.faviconUrl ? [appearance.faviconUrl] : []}
+                                onChange={(url) => setAppearance(prev => ({ ...prev, faviconUrl: url }))}
+                                onRemove={() => setAppearance(prev => ({ ...prev, faviconUrl: "" }))}
                             />
                         </CardContent>
                     </Card>

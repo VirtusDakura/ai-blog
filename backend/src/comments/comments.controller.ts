@@ -41,7 +41,6 @@ export class CommentsController {
     }
 
     // Get comments for moderation (blog owner)
-    @Public()
     @Get('moderate')
     getForModeration(
         @Query('userId') userId: string,
@@ -54,7 +53,6 @@ export class CommentsController {
     }
 
     // Moderate a single comment
-    @Public()
     @Post(':id/moderate')
     moderateComment(
         @Param('id') id: string,
@@ -64,7 +62,6 @@ export class CommentsController {
     }
 
     // Bulk moderate comments
-    @Public()
     @Post('bulk-moderate')
     bulkModerate(
         @Body() body: { userId: string; ids: string[]; action: 'approve' | 'reject' | 'spam' | 'delete' },
@@ -73,7 +70,6 @@ export class CommentsController {
     }
 
     // Reply to a comment as blog owner
-    @Public()
     @Post(':id/reply')
     replyAsOwner(
         @Param('id') id: string,
@@ -107,7 +103,6 @@ export class CommentsController {
         return this.commentsService.update(id, updateCommentDto, userId);
     }
 
-    @Public()
     @Delete(':id')
     @HttpCode(HttpStatus.OK)
     remove(@Param('id') id: string, @Query('userId') userId: string) {

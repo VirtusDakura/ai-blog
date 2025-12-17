@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSession } from 'next-auth/react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
@@ -132,12 +133,15 @@ export function usePostBySlug(slug: string) {
 // Hook to create a post
 export function useCreatePost() {
     const queryClient = useQueryClient();
+    const { data: session } = useSession();
+    const token = (session as any)?.accessToken;
 
     return useMutation({
         mutationFn: (data: CreatePostInput) =>
             fetchAPI<Post>('/posts', {
                 method: 'POST',
                 body: JSON.stringify(data),
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
             }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['posts'] });
@@ -148,12 +152,15 @@ export function useCreatePost() {
 // Hook to update a post
 export function useUpdatePost() {
     const queryClient = useQueryClient();
+    const { data: session } = useSession();
+    const token = (session as any)?.accessToken;
 
     return useMutation({
         mutationFn: ({ id, data }: { id: string; data: UpdatePostInput }) =>
             fetchAPI<Post>(`/posts/${id}`, {
                 method: 'PATCH',
                 body: JSON.stringify(data),
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
             }),
         onSuccess: (_, { id }) => {
             queryClient.invalidateQueries({ queryKey: ['posts'] });
@@ -165,11 +172,14 @@ export function useUpdatePost() {
 // Hook to publish a post
 export function usePublishPost() {
     const queryClient = useQueryClient();
+    const { data: session } = useSession();
+    const token = (session as any)?.accessToken;
 
     return useMutation({
         mutationFn: (id: string) =>
             fetchAPI<Post>(`/posts/${id}/publish`, {
                 method: 'POST',
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
             }),
         onSuccess: (_, id) => {
             queryClient.invalidateQueries({ queryKey: ['posts'] });
@@ -181,11 +191,14 @@ export function usePublishPost() {
 // Hook to unpublish a post
 export function useUnpublishPost() {
     const queryClient = useQueryClient();
+    const { data: session } = useSession();
+    const token = (session as any)?.accessToken;
 
     return useMutation({
         mutationFn: (id: string) =>
             fetchAPI<Post>(`/posts/${id}/unpublish`, {
                 method: 'POST',
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
             }),
         onSuccess: (_, id) => {
             queryClient.invalidateQueries({ queryKey: ['posts'] });
@@ -197,11 +210,14 @@ export function useUnpublishPost() {
 // Hook to delete a post
 export function useDeletePost() {
     const queryClient = useQueryClient();
+    const { data: session } = useSession();
+    const token = (session as any)?.accessToken;
 
     return useMutation({
         mutationFn: (id: string) =>
             fetchAPI<void>(`/posts/${id}`, {
                 method: 'DELETE',
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
             }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['posts'] });
@@ -213,54 +229,75 @@ export function useDeletePost() {
 
 // Hook to generate post content with AI
 export function useGeneratePost() {
+    const { data: session } = useSession();
+    const token = (session as any)?.accessToken;
+
     return useMutation({
         mutationFn: (data: GeneratePostInput) =>
             fetchAPI<GeneratePostResponse>('/ai/generate', {
                 method: 'POST',
                 body: JSON.stringify(data),
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
             }),
     });
 }
 
 // Hook to generate SEO metadata
 export function useGenerateSeo() {
+    const { data: session } = useSession();
+    const token = (session as any)?.accessToken;
+
     return useMutation({
         mutationFn: (content: string) =>
             fetchAPI<SeoMetadata>('/ai/seo', {
                 method: 'POST',
                 body: JSON.stringify({ content }),
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
             }),
     });
 }
 
 // Hook to generate tags
 export function useGenerateTags() {
+    const { data: session } = useSession();
+    const token = (session as any)?.accessToken;
+
     return useMutation({
         mutationFn: (content: string) =>
             fetchAPI<{ tags: string[] }>('/ai/tags', {
                 method: 'POST',
                 body: JSON.stringify({ content }),
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
             }),
     });
 }
 
 // Hook to queue AI article generation
 export function useQueueArticleGeneration() {
+    const { data: session } = useSession();
+    const token = (session as any)?.accessToken;
+
     return useMutation({
         mutationFn: (data: GeneratePostInput) =>
             fetchAPI<{ jobId: string; queue: string }>('/ai/queue/generate', {
                 method: 'POST',
                 body: JSON.stringify(data),
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
             }),
     });
 }
 
 // Hook to check job status
 export function useJobStatus(queue: string, jobId: string) {
+    const { data: session } = useSession();
+    const token = (session as any)?.accessToken;
+
     return useQuery({
         queryKey: ['jobs', queue, jobId],
-        queryFn: () => fetchAPI<{ id: string; state: string; result: any; progress: number }>(`/ai/queue/${queue}/${jobId}`),
-        enabled: !!queue && !!jobId,
+        queryFn: () => fetchAPI<{ id: string; state: string; result: any; progress: number }>(`/ai/queue/${queue}/${jobId}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {}
+        }),
+        enabled: !!queue && !!jobId && !!token,
         refetchInterval: (query) => {
             const state = query.state.data?.state;
             // Stop polling once job is completed or failed
@@ -317,13 +354,16 @@ export interface CommentsResponse {
 }
 
 export interface CreateCommentInput {
+    id?: string;
     content: string;
     postId: string;
     parentId?: string;
+    authorId?: string;
 }
 
 // Hook to fetch comments for a post
 export function useComments(postId: string) {
+    // Comments for display are public, so no auth needed (or optional)
     return useQuery({
         queryKey: ['comments', postId],
         queryFn: () => fetchAPI<CommentsResponse>(`/comments/post/${postId}`),
@@ -335,12 +375,15 @@ export function useComments(postId: string) {
 // Hook to create a comment
 export function useCreateComment() {
     const queryClient = useQueryClient();
+    const { data: session } = useSession();
+    const token = (session as any)?.accessToken;
 
     return useMutation({
         mutationFn: (data: CreateCommentInput) =>
             fetchAPI<Comment>('/comments', {
                 method: 'POST',
                 body: JSON.stringify(data),
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
             }),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['comments', variables.postId] });
@@ -351,12 +394,15 @@ export function useCreateComment() {
 // Hook to update a comment
 export function useUpdateComment() {
     const queryClient = useQueryClient();
+    const { data: session } = useSession();
+    const token = (session as any)?.accessToken;
 
     return useMutation({
         mutationFn: ({ id, content, postId }: { id: string; content: string; postId: string }) =>
             fetchAPI<Comment>(`/comments/${id}`, {
                 method: 'PATCH',
                 body: JSON.stringify({ content }),
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
             }),
         onSuccess: (_, { postId }) => {
             queryClient.invalidateQueries({ queryKey: ['comments', postId] });
@@ -367,11 +413,14 @@ export function useUpdateComment() {
 // Hook to delete a comment
 export function useDeleteComment() {
     const queryClient = useQueryClient();
+    const { data: session } = useSession();
+    const token = (session as any)?.accessToken;
 
     return useMutation({
         mutationFn: ({ id, postId }: { id: string; postId: string }) =>
             fetchAPI<void>(`/comments/${id}`, {
                 method: 'DELETE',
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
             }),
         onSuccess: (_, { postId }) => {
             queryClient.invalidateQueries({ queryKey: ['comments', postId] });

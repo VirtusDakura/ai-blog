@@ -1,80 +1,131 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react"
+import { useBlogSettings, useUpdateBlogSettings, useDonations } from "@/hooks/use-blog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
+import { useToast } from "@/hooks/use-toast"
 import {
     DollarSign, CreditCard, Gift, Coffee, Sparkles, TrendingUp,
-    Lock, Check, ArrowUpRight, Users, Star, Zap
+    Lock, Check, ArrowUpRight, Users, Star, RefreshCw
 } from "lucide-react"
 
-// Monetization methods
-const monetizationMethods = [
-    {
-        id: "donations",
-        name: "Donations",
-        description: "Accept one-time donations from readers",
-        icon: Gift,
-        enabled: false,
-    },
-    {
-        id: "buy-me-coffee",
-        name: "Buy Me a Coffee",
-        description: "Let readers buy you a virtual coffee",
-        icon: Coffee,
-        enabled: true,
-    },
-    {
-        id: "memberships",
-        name: "Memberships",
-        description: "Offer premium membership tiers",
-        icon: Star,
-        enabled: false,
-        premium: true,
-    },
-    {
-        id: "paid-posts",
-        name: "Paid Posts",
-        description: "Lock content behind a paywall",
-        icon: Lock,
-        enabled: false,
-        premium: true,
-    },
-]
-
-// Mock earnings data
-const earningsData = {
-    thisMonth: 125.50,
-    lastMonth: 98.25,
-    total: 542.75,
-    pendingPayout: 75.00,
-}
-
-// Mock supporters
-const mockSupporters = [
-    { id: 1, name: "John D.", amount: 5, message: "Great content!", date: "2024-12-16" },
-    { id: 2, name: "Anonymous", amount: 10, message: "Keep up the good work!", date: "2024-12-14" },
-    { id: 3, name: "Sarah M.", amount: 3, message: "", date: "2024-12-10" },
-]
-
 export default function MonetizationPage() {
-    const [methods, setMethods] = useState(monetizationMethods)
+    const { data: session } = useSession()
+    const userId = (session?.user as any)?.id
+    const { toast } = useToast()
+
+    // Fetch data
+    const { data: settings, isLoading: isLoadingSettings } = useBlogSettings(userId)
+    const { data: donationData, isLoading: isLoadingDonations } = useDonations(userId)
+    const updateSettings = useUpdateBlogSettings()
+
+    // State
+    const [methods, setMethods] = useState([
+        {
+            id: "donations",
+            name: "Donations",
+            description: "Accept one-time donations from readers",
+            icon: Gift,
+            enabled: false,
+        },
+        {
+            id: "buy-me-coffee",
+            name: "Buy Me a Coffee",
+            description: "Let readers buy you a virtual coffee (coming soon)",
+            icon: Coffee,
+            enabled: false,
+        },
+        {
+            id: "memberships",
+            name: "Memberships",
+            description: "Offer premium membership tiers",
+            icon: Star,
+            enabled: false,
+            premium: true,
+        },
+        {
+            id: "paid-posts",
+            name: "Paid Posts",
+            description: "Lock content behind a paywall",
+            icon: Lock,
+            enabled: false,
+            premium: true,
+        },
+    ])
+
     const [paymentSettings, setPaymentSettings] = useState({
         stripeConnected: false,
         paypalEmail: "",
         minimumPayout: 50,
     })
+
     const [donationSettings, setDonationSettings] = useState({
         suggestedAmounts: [3, 5, 10],
         customAmount: true,
         message: "If you enjoy my content, consider supporting my work!",
     })
+
+    // Update state when settings are loaded
+    useEffect(() => {
+        if (settings) {
+            // Update methods enablement
+            setMethods(prev => prev.map(m => {
+                if (m.id === "donations") return { ...m, enabled: settings.donationsEnabled || false }
+                return m
+            }))
+
+            // Update payment settings
+            setPaymentSettings({
+                stripeConnected: settings.stripeConnected || false,
+                paypalEmail: settings.paypalEmail || "",
+                minimumPayout: settings.minimumPayout || 50,
+            })
+
+            // Update donation settings
+            setDonationSettings({
+                suggestedAmounts: settings.suggestedAmounts ? settings.suggestedAmounts.split(',').map(Number) : [3, 5, 10],
+                customAmount: true, // Assuming always true for now, add to backend if needed
+                message: settings.donationMessage || "If you enjoy my content, consider supporting my work!",
+            })
+        }
+    }, [settings])
+
+    const handleSave = async () => {
+        if (!userId) return
+
+        try {
+            await updateSettings.mutateAsync({
+                userId,
+                settings: {
+                    donationsEnabled: methods.find(m => m.id === "donations")?.enabled,
+                    paypalEmail: paymentSettings.paypalEmail,
+                    minimumPayout: paymentSettings.minimumPayout,
+                    donationMessage: donationSettings.message,
+                    suggestedAmounts: donationSettings.suggestedAmounts.join(','),
+                }
+            })
+
+            toast({
+                title: "Settings saved",
+                description: "Your monetization settings have been updated.",
+            })
+        } catch (error) {
+            console.error("Failed to save monetization settings:", error)
+            toast({
+                title: "Error",
+                description: "Failed to save settings. Please try again.",
+                variant: "destructive",
+            })
+        }
+    }
 
     const toggleMethod = (id: string) => {
         setMethods(prev => prev.map(m =>
@@ -82,7 +133,22 @@ export default function MonetizationPage() {
         ))
     }
 
-    const growthPercent = ((earningsData.thisMonth - earningsData.lastMonth) / earningsData.lastMonth * 100).toFixed(1)
+    // Use actual data or fallback
+    const earnings = {
+        total: donationData?.total || 0,
+        pendingPayout: donationData?.total || 0, // Simplified for now
+    }
+
+    // Calculate growth (mock for now as we don't have historical data structure yet)
+    const growthPercent = "0.0"
+
+    if (isLoadingSettings) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        )
+    }
 
     return (
         <div className="space-y-6">
@@ -94,10 +160,20 @@ export default function MonetizationPage() {
                         Earn money from your blog content
                     </p>
                 </div>
-                <Button variant="outline">
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Payout Settings
-                </Button>
+                <div className="flex items-center gap-3">
+                    <Button variant="outline">
+                        <CreditCard className="mr-2 h-4 w-4" />
+                        Payout Settings
+                    </Button>
+                    <Button onClick={handleSave} disabled={updateSettings.isPending}>
+                        {updateSettings.isPending ? (
+                            <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <Check className="mr-2 h-4 w-4" />
+                        )}
+                        Save Changes
+                    </Button>
+                </div>
             </div>
 
             {/* Earnings Overview */}
@@ -106,8 +182,8 @@ export default function MonetizationPage() {
                     <CardContent className="pt-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-muted-foreground">This Month</p>
-                                <p className="text-2xl font-bold text-green-600">${earningsData.thisMonth}</p>
+                                <p className="text-sm text-muted-foreground">Total Donations</p>
+                                <p className="text-2xl font-bold text-green-600">${earnings.total.toFixed(2)}</p>
                             </div>
                             <div className="p-3 rounded-full bg-green-500/10">
                                 <DollarSign className="h-6 w-6 text-green-500" />
@@ -115,7 +191,7 @@ export default function MonetizationPage() {
                         </div>
                         <div className="flex items-center gap-1 mt-2 text-sm text-green-600">
                             <ArrowUpRight className="h-4 w-4" />
-                            <span>+{growthPercent}% from last month</span>
+                            <span>{donationData?.count || 0} supporters</span>
                         </div>
                     </CardContent>
                 </Card>
@@ -123,40 +199,45 @@ export default function MonetizationPage() {
                     <CardContent className="pt-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-muted-foreground">Last Month</p>
-                                <p className="text-2xl font-bold">${earningsData.lastMonth}</p>
+                                <p className="text-sm text-muted-foreground">This Month</p>
+                                <p className="text-2xl font-bold">$0.00</p>
                             </div>
                             <TrendingUp className="h-8 w-8 text-blue-500" />
                         </div>
+                        <p className="text-xs text-muted-foreground mt-2">
+                            Coming soon
+                        </p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardContent className="pt-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-muted-foreground">Total Earned</p>
-                                <p className="text-2xl font-bold">${earningsData.total}</p>
-                            </div>
-                            <Sparkles className="h-8 w-8 text-violet-500" />
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-muted-foreground">Pending</p>
-                                <p className="text-2xl font-bold">${earningsData.pendingPayout}</p>
+                                <p className="text-sm text-muted-foreground">Pending Payout</p>
+                                <p className="text-2xl font-bold">${earnings.pendingPayout.toFixed(2)}</p>
                             </div>
                             <CreditCard className="h-8 w-8 text-orange-500" />
                         </div>
                         <Progress
-                            value={(earningsData.pendingPayout / paymentSettings.minimumPayout) * 100}
+                            value={Math.min(100, (earnings.pendingPayout / paymentSettings.minimumPayout) * 100)}
                             className="mt-2 h-2"
                         />
                         <p className="text-xs text-muted-foreground mt-1">
-                            ${paymentSettings.minimumPayout - earningsData.pendingPayout} until payout
+                            ${Math.max(0, paymentSettings.minimumPayout - earnings.pendingPayout).toFixed(2)} until payout
                         </p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm text-muted-foreground">Active Methods</p>
+                                <p className="text-2xl font-bold">
+                                    {methods.filter(m => m.enabled).length}
+                                </p>
+                            </div>
+                            <Sparkles className="h-8 w-8 text-violet-500" />
+                        </div>
                     </CardContent>
                 </Card>
             </div>
@@ -207,11 +288,27 @@ export default function MonetizationPage() {
                                             />
                                         </div>
                                     </CardHeader>
-                                    {method.enabled && (
+                                    {method.enabled && method.id === 'donations' && (
                                         <CardContent>
-                                            <Button variant="outline" size="sm">
-                                                Configure
-                                            </Button>
+                                            <div className="space-y-4">
+                                                <div className="space-y-2">
+                                                    <Label>Button Message</Label>
+                                                    <Input
+                                                        value={donationSettings.message}
+                                                        onChange={(e) => setDonationSettings(prev => ({ ...prev, message: e.target.value }))}
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label>Suggested Amounts (comma separated)</Label>
+                                                    <Input
+                                                        value={donationSettings.suggestedAmounts.join(', ')}
+                                                        onChange={(e) => {
+                                                            const amounts = e.target.value.split(',').map(s => parseInt(s.trim()) || 0).filter(n => n > 0);
+                                                            setDonationSettings(prev => ({ ...prev, suggestedAmounts: amounts.length ? amounts : [3, 5] }))
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
                                         </CardContent>
                                     )}
                                 </Card>
@@ -220,41 +317,43 @@ export default function MonetizationPage() {
                     </div>
 
                     {/* Donation Widget Preview */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Donation Widget</CardTitle>
-                            <CardDescription>
-                                Preview how your donation widget will appear
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="max-w-md mx-auto p-6 rounded-xl border bg-gradient-to-br from-violet-500/5 to-purple-500/5">
-                                <div className="text-center mb-4">
-                                    <Coffee className="h-8 w-8 mx-auto mb-2 text-violet-500" />
-                                    <p className="font-medium">{donationSettings.message}</p>
+                    {methods.find(m => m.id === "donations")?.enabled && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Donation Widget Preview</CardTitle>
+                                <CardDescription>
+                                    Preview how your donation widget will appear to visitors
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="max-w-md mx-auto p-6 rounded-xl border bg-gradient-to-br from-violet-500/5 to-purple-500/5">
+                                    <div className="text-center mb-4">
+                                        <Coffee className="h-8 w-8 mx-auto mb-2 text-violet-500" />
+                                        <p className="font-medium">{donationSettings.message}</p>
+                                    </div>
+                                    <div className="flex justify-center gap-2 mb-4">
+                                        {donationSettings.suggestedAmounts.map((amount) => (
+                                            <button
+                                                key={amount}
+                                                className="px-4 py-2 rounded-lg border hover:border-violet-500 hover:bg-violet-500/5 transition-colors bg-background"
+                                            >
+                                                ${amount}
+                                            </button>
+                                        ))}
+                                        {donationSettings.customAmount && (
+                                            <button className="px-4 py-2 rounded-lg border hover:border-violet-500 hover:bg-violet-500/5 transition-colors bg-background">
+                                                Custom
+                                            </button>
+                                        )}
+                                    </div>
+                                    <Button className="w-full bg-gradient-to-r from-violet-500 to-purple-600">
+                                        <Gift className="mr-2 h-4 w-4" />
+                                        Support
+                                    </Button>
                                 </div>
-                                <div className="flex justify-center gap-2 mb-4">
-                                    {donationSettings.suggestedAmounts.map((amount) => (
-                                        <button
-                                            key={amount}
-                                            className="px-4 py-2 rounded-lg border hover:border-violet-500 hover:bg-violet-500/5 transition-colors"
-                                        >
-                                            ${amount}
-                                        </button>
-                                    ))}
-                                    {donationSettings.customAmount && (
-                                        <button className="px-4 py-2 rounded-lg border hover:border-violet-500 hover:bg-violet-500/5 transition-colors">
-                                            Custom
-                                        </button>
-                                    )}
-                                </div>
-                                <Button className="w-full bg-gradient-to-r from-violet-500 to-purple-600">
-                                    <Gift className="mr-2 h-4 w-4" />
-                                    Support
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
+                            </CardContent>
+                        </Card>
+                    )}
                 </TabsContent>
 
                 {/* Supporters */}
@@ -267,30 +366,30 @@ export default function MonetizationPage() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            {mockSupporters.length === 0 ? (
+                            {!donationData?.donations || donationData.donations.length === 0 ? (
                                 <div className="text-center py-12 text-muted-foreground">
                                     <Gift className="h-12 w-12 mx-auto mb-4 opacity-50" />
                                     <p>No supporters yet</p>
                                 </div>
                             ) : (
                                 <div className="space-y-4">
-                                    {mockSupporters.map((supporter) => (
-                                        <div key={supporter.id} className="flex items-center justify-between p-4 rounded-lg border">
+                                    {donationData.donations.map((donation) => (
+                                        <div key={donation.id} className="flex items-center justify-between p-4 rounded-lg border">
                                             <div className="flex items-center gap-4">
                                                 <div className="h-10 w-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-medium">
-                                                    {supporter.name.charAt(0)}
+                                                    {(donation.donorName || "A").charAt(0)}
                                                 </div>
                                                 <div>
-                                                    <p className="font-medium">{supporter.name}</p>
-                                                    {supporter.message && (
-                                                        <p className="text-sm text-muted-foreground">"{supporter.message}"</p>
+                                                    <p className="font-medium">{donation.donorName || "Anonymous"}</p>
+                                                    {donation.message && (
+                                                        <p className="text-sm text-muted-foreground">"{donation.message}"</p>
                                                     )}
                                                 </div>
                                             </div>
                                             <div className="text-right">
-                                                <p className="font-bold text-green-600">${supporter.amount}</p>
+                                                <p className="font-bold text-green-600">${donation.amount}</p>
                                                 <p className="text-xs text-muted-foreground">
-                                                    {new Date(supporter.date).toLocaleDateString()}
+                                                    {new Date(donation.createdAt).toLocaleDateString()}
                                                 </p>
                                             </div>
                                         </div>
@@ -318,17 +417,10 @@ export default function MonetizationPage() {
                                     </div>
                                     <div>
                                         <p className="font-medium">Stripe</p>
-                                        <p className="text-sm text-muted-foreground">Accept card payments</p>
+                                        <p className="text-sm text-muted-foreground">Accept card payments (Coming Soon)</p>
                                     </div>
                                 </div>
-                                {paymentSettings.stripeConnected ? (
-                                    <div className="flex items-center gap-2 text-green-600">
-                                        <Check className="h-4 w-4" />
-                                        <span className="text-sm">Connected</span>
-                                    </div>
-                                ) : (
-                                    <Button>Connect Stripe</Button>
-                                )}
+                                <Button disabled variant="outline">Connect Stripe</Button>
                             </div>
                             <div className="space-y-2">
                                 <Label>PayPal Email</Label>
@@ -338,6 +430,9 @@ export default function MonetizationPage() {
                                     onChange={(e) => setPaymentSettings(prev => ({ ...prev, paypalEmail: e.target.value }))}
                                     placeholder="your@email.com"
                                 />
+                                <p className="text-sm text-muted-foreground">
+                                    We'll send payouts to this PayPal address
+                                </p>
                             </div>
                             <div className="space-y-2">
                                 <Label>Minimum Payout Amount</Label>
@@ -346,12 +441,12 @@ export default function MonetizationPage() {
                                     <Input
                                         type="number"
                                         value={paymentSettings.minimumPayout}
-                                        onChange={(e) => setPaymentSettings(prev => ({ ...prev, minimumPayout: parseInt(e.target.value) }))}
+                                        onChange={(e) => setPaymentSettings(prev => ({ ...prev, minimumPayout: parseInt(e.target.value) || 0 }))}
                                         className="w-24"
                                     />
                                 </div>
                                 <p className="text-sm text-muted-foreground">
-                                    We'll send your payout when you reach this amount
+                                    We'll send your payout when your balance reaches this amount
                                 </p>
                             </div>
                         </CardContent>

@@ -1,37 +1,52 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react"
+import { useSubscribers, useSubscriberStats, useCampaigns, useCreateCampaign } from "@/hooks/use-cms"
+import { useBlogSettings, useUpdateBlogSettings } from "@/hooks/use-blog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useToast } from "@/hooks/use-toast"
 import {
     Users, Mail, Download, Search, UserPlus, Send, TrendingUp,
-    MailOpen, MousePointerClick, Trash2, MoreHorizontal
+    MailOpen, MousePointerClick, Trash2, MoreHorizontal, RefreshCw
 } from "lucide-react"
-
-// Mock subscribers data
-const mockSubscribers = [
-    { id: 1, email: "john@example.com", name: "John Doe", subscribed: "2024-12-15", status: "active" },
-    { id: 2, email: "jane@example.com", name: "Jane Smith", subscribed: "2024-12-14", status: "active" },
-    { id: 3, email: "bob@example.com", name: "Bob Wilson", subscribed: "2024-12-10", status: "active" },
-    { id: 4, email: "alice@example.com", name: "Alice Brown", subscribed: "2024-12-08", status: "unsubscribed" },
-]
-
-// Mock newsletter campaigns
-const mockCampaigns = [
-    { id: 1, subject: "Weekly Digest - Dec 16", sent: "2024-12-16", recipients: 45, opened: 32, clicked: 12, status: "sent" },
-    { id: 2, subject: "New Post: AI in 2025", sent: "2024-12-10", recipients: 42, opened: 28, clicked: 15, status: "sent" },
-    { id: 3, subject: "Welcome to Our Blog!", sent: null, recipients: 0, opened: 0, clicked: 0, status: "draft" },
-]
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
 
 export default function SubscribersPage() {
-    const [subscribers, setSubscribers] = useState(mockSubscribers)
+    const { data: session } = useSession()
+    const userId = (session?.user as any)?.id
+    const { toast } = useToast()
+
+    // Data Fetching
+    const { data: subscribers = [], isLoading: isLoadingSubscribers } = useSubscribers(userId)
+    const { data: stats = {}, isLoading: isLoadingStats } = useSubscriberStats(userId)
+    const { data: campaigns = [], isLoading: isLoadingCampaigns } = useCampaigns(userId)
+    const { data: settings } = useBlogSettings(userId)
+
+    // Mutations
+    const updateSettings = useUpdateBlogSettings()
+    const createCampaign = useCreateCampaign()
+
+    // State
     const [searchQuery, setSearchQuery] = useState("")
+    const [isCampaignDialogOpen, setIsCampaignDialogOpen] = useState(false)
+    const [newCampaign, setNewCampaign] = useState({ subject: "", content: "" })
     const [newsletterSettings, setNewsletterSettings] = useState({
         enabled: true,
         doubleOptIn: true,
@@ -40,13 +55,73 @@ export default function SubscribersPage() {
         newPostNotification: true,
     })
 
-    const filteredSubscribers = subscribers.filter(sub =>
-        sub.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        sub.name.toLowerCase().includes(searchQuery.toLowerCase())
+    useEffect(() => {
+        if (settings) {
+            setNewsletterSettings({
+                enabled: settings.newsletterEnabled ?? true,
+                doubleOptIn: settings.newsletterDoubleOptIn ?? true,
+                welcomeEmail: settings.newsletterWelcomeEmail ?? true,
+                weeklyDigest: settings.newsletterWeeklyDigest ?? false,
+                newPostNotification: settings.newsletterNewPostNotification ?? true,
+            })
+        }
+    }, [settings])
+
+    const filteredSubscribers = subscribers.filter((sub: any) =>
+        sub.email.toLowerCase().includes(searchQuery.toLowerCase())
     )
 
-    const activeSubscribers = subscribers.filter(s => s.status === "active").length
+    const activeSubscribers = subscribers.filter((s: any) => s.isVerified).length // Using isVerified as active
     const totalSubscribers = subscribers.length
+
+    const handleUpdateSettings = async (key: string, value: boolean) => {
+        const newSettings = { ...newsletterSettings, [key]: value }
+        setNewsletterSettings(newSettings)
+
+        if (!userId) return
+
+        try {
+            await updateSettings.mutateAsync({
+                userId,
+                settings: {
+                    newsletterEnabled: newSettings.enabled,
+                    newsletterDoubleOptIn: newSettings.doubleOptIn,
+                    newsletterWelcomeEmail: newSettings.welcomeEmail,
+                    newsletterWeeklyDigest: newSettings.weeklyDigest,
+                    newsletterNewPostNotification: newSettings.newPostNotification,
+                }
+            })
+            toast({ title: "Settings saved" })
+        } catch (error) {
+            toast({ title: "Error", description: "Failed to save settings", variant: "destructive" })
+        }
+    }
+
+    const handleCreateCampaign = async () => {
+        if (!userId || !newCampaign.subject) return
+
+        try {
+            await createCampaign.mutateAsync({
+                userId,
+                subject: newCampaign.subject,
+                content: newCampaign.content,
+                status: "DRAFT" // Start as draft
+            })
+            setIsCampaignDialogOpen(false)
+            setNewCampaign({ subject: "", content: "" })
+            toast({ title: "Campaign created", description: "Draft campaign created successfully" })
+        } catch (error) {
+            toast({ title: "Error", description: "Failed to create campaign", variant: "destructive" })
+        }
+    }
+
+    if (isLoadingSubscribers || isLoadingStats || isLoadingCampaigns) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        )
+    }
 
     return (
         <div className="space-y-6">
@@ -63,10 +138,46 @@ export default function SubscribersPage() {
                         <Download className="mr-2 h-4 w-4" />
                         Export
                     </Button>
-                    <Button>
-                        <Send className="mr-2 h-4 w-4" />
-                        New Campaign
-                    </Button>
+                    <Dialog open={isCampaignDialogOpen} onOpenChange={setIsCampaignDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button>
+                                <Send className="mr-2 h-4 w-4" />
+                                New Campaign
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Create New Campaign</DialogTitle>
+                                <DialogDescription>Draft a new email campaign</DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                                <div className="space-y-2">
+                                    <Label>Subject</Label>
+                                    <Input
+                                        value={newCampaign.subject}
+                                        onChange={(e) => setNewCampaign(prev => ({ ...prev, subject: e.target.value }))}
+                                        placeholder="e.g. Weekly Update"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Content (HTML/Markdown)</Label>
+                                    <Textarea
+                                        value={newCampaign.content}
+                                        onChange={(e) => setNewCampaign(prev => ({ ...prev, content: e.target.value }))}
+                                        placeholder="Hello there..."
+                                        rows={5}
+                                    />
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button variant="outline" onClick={() => setIsCampaignDialogOpen(false)}>Cancel</Button>
+                                <Button onClick={handleCreateCampaign} disabled={createCampaign.isPending}>
+                                    {createCampaign.isPending && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+                                    Create Draft
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
                 </div>
             </div>
 
@@ -87,7 +198,7 @@ export default function SubscribersPage() {
                     <CardContent className="pt-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-muted-foreground">Active</p>
+                                <p className="text-sm text-muted-foreground">Active (Verified)</p>
                                 <p className="text-2xl font-bold">{activeSubscribers}</p>
                             </div>
                             <UserPlus className="h-8 w-8 text-green-500" />
@@ -99,7 +210,7 @@ export default function SubscribersPage() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm text-muted-foreground">Avg Open Rate</p>
-                                <p className="text-2xl font-bold">68%</p>
+                                <p className="text-2xl font-bold">{stats.avgOpenRate ? `${stats.avgOpenRate}%` : 'N/A'}</p>
                             </div>
                             <MailOpen className="h-8 w-8 text-blue-500" />
                         </div>
@@ -110,7 +221,7 @@ export default function SubscribersPage() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm text-muted-foreground">Avg Click Rate</p>
-                                <p className="text-2xl font-bold">24%</p>
+                                <p className="text-2xl font-bold">{stats.avgClickRate ? `${stats.avgClickRate}%` : 'N/A'}</p>
                             </div>
                             <MousePointerClick className="h-8 w-8 text-orange-500" />
                         </div>
@@ -157,23 +268,23 @@ export default function SubscribersPage() {
                                 </div>
                             ) : (
                                 <div className="divide-y">
-                                    {filteredSubscribers.map((subscriber) => (
+                                    {filteredSubscribers.map((subscriber: any) => (
                                         <div key={subscriber.id} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
                                             <div className="flex items-center gap-4">
                                                 <Avatar className="h-10 w-10">
-                                                    <AvatarFallback>{subscriber.name.charAt(0)}</AvatarFallback>
+                                                    <AvatarFallback>{(subscriber.email || "U").charAt(0).toUpperCase()}</AvatarFallback>
                                                 </Avatar>
                                                 <div>
-                                                    <p className="font-medium">{subscriber.name}</p>
+                                                    <p className="font-medium">{subscriber.email}</p>
                                                     <p className="text-sm text-muted-foreground">{subscriber.email}</p>
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-4">
-                                                <Badge variant={subscriber.status === "active" ? "default" : "secondary"}>
-                                                    {subscriber.status}
+                                                <Badge variant={subscriber.isVerified ? "default" : "secondary"}>
+                                                    {subscriber.isVerified ? "Verified" : "Pending"}
                                                 </Badge>
                                                 <span className="text-sm text-muted-foreground">
-                                                    {new Date(subscriber.subscribed).toLocaleDateString()}
+                                                    {new Date(subscriber.createdAt).toLocaleDateString()}
                                                 </span>
                                                 <Button variant="ghost" size="icon">
                                                     <Trash2 className="h-4 w-4 text-red-500" />
@@ -198,39 +309,46 @@ export default function SubscribersPage() {
                         </CardHeader>
                         <CardContent className="p-0">
                             <div className="divide-y">
-                                {mockCampaigns.map((campaign) => (
-                                    <div key={campaign.id} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
-                                        <div>
-                                            <p className="font-medium">{campaign.subject}</p>
-                                            <p className="text-sm text-muted-foreground">
-                                                {campaign.sent ? `Sent on ${new Date(campaign.sent).toLocaleDateString()}` : "Not sent yet"}
-                                            </p>
-                                        </div>
-                                        <div className="flex items-center gap-6">
-                                            {campaign.status === "sent" ? (
-                                                <>
-                                                    <div className="text-center">
-                                                        <p className="text-sm font-medium">{campaign.recipients}</p>
-                                                        <p className="text-xs text-muted-foreground">Sent</p>
-                                                    </div>
-                                                    <div className="text-center">
-                                                        <p className="text-sm font-medium">{campaign.opened}</p>
-                                                        <p className="text-xs text-muted-foreground">Opened</p>
-                                                    </div>
-                                                    <div className="text-center">
-                                                        <p className="text-sm font-medium">{campaign.clicked}</p>
-                                                        <p className="text-xs text-muted-foreground">Clicked</p>
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                <Badge variant="secondary">Draft</Badge>
-                                            )}
-                                            <Button variant="ghost" size="icon">
-                                                <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
-                                        </div>
+                                {campaigns.length === 0 ? (
+                                    <div className="text-center py-12 text-muted-foreground">
+                                        <Mail className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                                        <p>No campaigns yet</p>
                                     </div>
-                                ))}
+                                ) : (
+                                    campaigns.map((campaign: any) => (
+                                        <div key={campaign.id} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
+                                            <div>
+                                                <p className="font-medium">{campaign.subject}</p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    {campaign.sentAt ? `Sent on ${new Date(campaign.sentAt).toLocaleDateString()}` : "Draft"}
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center gap-6">
+                                                {campaign.status === "SENT" ? (
+                                                    <>
+                                                        <div className="text-center">
+                                                            <p className="text-sm font-medium">{campaign.recipientsCount || 0}</p>
+                                                            <p className="text-xs text-muted-foreground">Sent</p>
+                                                        </div>
+                                                        <div className="text-center">
+                                                            <p className="text-sm font-medium">{campaign.openedCount || 0}</p>
+                                                            <p className="text-xs text-muted-foreground">Opened</p>
+                                                        </div>
+                                                        <div className="text-center">
+                                                            <p className="text-sm font-medium">{campaign.clickedCount || 0}</p>
+                                                            <p className="text-xs text-muted-foreground">Clicked</p>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <Badge variant="secondary">{campaign.status}</Badge>
+                                                )}
+                                                <Button variant="ghost" size="icon">
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
                             </div>
                         </CardContent>
                     </Card>
@@ -255,7 +373,8 @@ export default function SubscribersPage() {
                                 </div>
                                 <Switch
                                     checked={newsletterSettings.enabled}
-                                    onCheckedChange={(checked) => setNewsletterSettings(prev => ({ ...prev, enabled: checked }))}
+                                    onCheckedChange={(checked) => handleUpdateSettings('enabled', checked)}
+                                    disabled={updateSettings.isPending}
                                 />
                             </div>
                             <div className="flex items-center justify-between">
@@ -267,7 +386,8 @@ export default function SubscribersPage() {
                                 </div>
                                 <Switch
                                     checked={newsletterSettings.doubleOptIn}
-                                    onCheckedChange={(checked) => setNewsletterSettings(prev => ({ ...prev, doubleOptIn: checked }))}
+                                    onCheckedChange={(checked) => handleUpdateSettings('doubleOptIn', checked)}
+                                    disabled={updateSettings.isPending}
                                 />
                             </div>
                             <div className="flex items-center justify-between">
@@ -279,7 +399,8 @@ export default function SubscribersPage() {
                                 </div>
                                 <Switch
                                     checked={newsletterSettings.welcomeEmail}
-                                    onCheckedChange={(checked) => setNewsletterSettings(prev => ({ ...prev, welcomeEmail: checked }))}
+                                    onCheckedChange={(checked) => handleUpdateSettings('welcomeEmail', checked)}
+                                    disabled={updateSettings.isPending}
                                 />
                             </div>
                             <div className="flex items-center justify-between">
@@ -291,7 +412,8 @@ export default function SubscribersPage() {
                                 </div>
                                 <Switch
                                     checked={newsletterSettings.newPostNotification}
-                                    onCheckedChange={(checked) => setNewsletterSettings(prev => ({ ...prev, newPostNotification: checked }))}
+                                    onCheckedChange={(checked) => handleUpdateSettings('newPostNotification', checked)}
+                                    disabled={updateSettings.isPending}
                                 />
                             </div>
                             <div className="flex items-center justify-between">
@@ -303,7 +425,8 @@ export default function SubscribersPage() {
                                 </div>
                                 <Switch
                                     checked={newsletterSettings.weeklyDigest}
-                                    onCheckedChange={(checked) => setNewsletterSettings(prev => ({ ...prev, weeklyDigest: checked }))}
+                                    onCheckedChange={(checked) => handleUpdateSettings('weeklyDigest', checked)}
+                                    disabled={updateSettings.isPending}
                                 />
                             </div>
                         </CardContent>

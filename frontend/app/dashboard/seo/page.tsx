@@ -1,7 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react"
 import { useBlog } from "@/contexts/blog-context"
+import { useBlogSettings, useUpdateBlogSettings } from "@/hooks/use-blog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -10,20 +12,26 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
+import ImageUpload from "@/components/ui/image-upload"
+import { useToast } from "@/hooks/use-toast"
 import {
-    Search, Globe, FileText, Image, Link2, BarChart3, Check, AlertCircle,
-    Save, RefreshCw, ExternalLink, Copy, Sparkles
+    Search, Globe, FileText, Image as ImageIcon, Link2, Check, AlertCircle,
+    Save, RefreshCw, Copy, Sparkles
 } from "lucide-react"
 
 export default function SEOPage() {
+    const { data: session } = useSession()
+    const userId = (session?.user as any)?.id
     const blog = useBlog()
-    const [isLoading, setIsLoading] = useState(false)
-    const [saveSuccess, setSaveSuccess] = useState(false)
+    const { toast } = useToast()
+
+    // Fetch settings
+    const { data: settings, isLoading: isLoadingSettings } = useBlogSettings(userId)
+    const updateSettings = useUpdateBlogSettings()
 
     const [seoSettings, setSeoSettings] = useState({
         // Meta Tags
         siteTitle: blog.blogName || "",
-        titleSeparator: "-",
         metaDescription: blog.blogDescription || "",
         keywords: "",
 
@@ -35,13 +43,26 @@ export default function SEOPage() {
         // Technical
         enableJsonLd: true,
         enableSitemap: true,
-        enableRobots: true,
         canonicalUrl: "",
-
-        // Content
-        autoMetaDescription: true,
-        autoOgImage: true,
     })
+
+    // Load data
+    useEffect(() => {
+        if (settings) {
+            setSeoSettings(prev => ({
+                ...prev,
+                siteTitle: settings.seoTitle || blog.blogName || "",
+                metaDescription: settings.seoDescription || blog.blogDescription || "",
+                keywords: settings.seoKeywords || "",
+                ogImage: settings.ogImage || "",
+                twitterHandle: settings.twitterHandle || "",
+                facebookPage: settings.facebookPage || "",
+                enableJsonLd: settings.enableJsonLd ?? true,
+                enableSitemap: settings.enableSitemap ?? true,
+                canonicalUrl: settings.canonicalUrl || "",
+            }))
+        }
+    }, [settings, blog.blogName, blog.blogDescription])
 
     // SEO Score calculation
     const calculateSeoScore = () => {
@@ -59,26 +80,60 @@ export default function SEOPage() {
     const seoScore = calculateSeoScore()
 
     const handleSave = async () => {
-        setIsLoading(true)
-        await new Promise(r => setTimeout(r, 1000))
-        setSaveSuccess(true)
-        setTimeout(() => setSaveSuccess(false), 3000)
-        setIsLoading(false)
+        if (!userId) return
+
+        try {
+            await updateSettings.mutateAsync({
+                userId,
+                settings: {
+                    seoTitle: seoSettings.siteTitle,
+                    seoDescription: seoSettings.metaDescription,
+                    seoKeywords: seoSettings.keywords,
+                    ogImage: seoSettings.ogImage,
+                    twitterHandle: seoSettings.twitterHandle,
+                    facebookPage: seoSettings.facebookPage,
+                    enableJsonLd: seoSettings.enableJsonLd,
+                    enableSitemap: seoSettings.enableSitemap,
+                    canonicalUrl: seoSettings.canonicalUrl,
+                }
+            })
+
+            toast({
+                title: "Settings saved",
+                description: "Your SEO settings have been updated.",
+            })
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "Failed to save SEO settings.",
+                variant: "destructive",
+            })
+        }
     }
 
     const generateWithAI = async (field: string) => {
-        // Simulate AI generation
+        // Simulate AI generation - in a real app this would call openai/anthropic
+        toast({ title: "AI Generation", description: "This would call the AI service in production." });
+
         if (field === "description") {
             setSeoSettings(prev => ({
                 ...prev,
-                metaDescription: "Discover insightful articles, tutorials, and tips on our blog. Stay updated with the latest trends and expert knowledge in our field."
+                metaDescription: `Discover insightful articles, tutorials, and tips on ${seoSettings.siteTitle}. Stay updated with the latest trends and expert knowledge.`
             }))
         } else if (field === "keywords") {
             setSeoSettings(prev => ({
                 ...prev,
-                keywords: "blog, articles, tutorials, tips, insights, technology"
+                keywords: "blog, articles, tutorials, tips, insights, technology, learning"
             }))
         }
+    }
+
+    if (isLoadingSettings) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        )
     }
 
     return (
@@ -92,14 +147,8 @@ export default function SEOPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    {saveSuccess && (
-                        <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-500/10 text-green-600">
-                            <Check className="h-4 w-4" />
-                            <span className="text-sm font-medium">Saved!</span>
-                        </div>
-                    )}
-                    <Button onClick={handleSave} disabled={isLoading}>
-                        {isLoading ? (
+                    <Button onClick={handleSave} disabled={updateSettings.isPending}>
+                        {updateSettings.isPending ? (
                             <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
                             <Save className="mr-2 h-4 w-4" />
@@ -121,8 +170,8 @@ export default function SEOPage() {
                         </div>
                         <div className="text-right">
                             <span className={`text-4xl font-bold ${seoScore >= 80 ? "text-green-500" :
-                                    seoScore >= 60 ? "text-yellow-500" :
-                                        "text-red-500"
+                                seoScore >= 60 ? "text-yellow-500" :
+                                    "text-red-500"
                                 }`}>
                                 {seoScore}
                             </span>
@@ -195,7 +244,7 @@ export default function SEOPage() {
                         <CardContent>
                             <div className="p-4 rounded-lg bg-white dark:bg-zinc-900 border">
                                 <p className="text-blue-600 dark:text-blue-400 text-lg hover:underline cursor-pointer">
-                                    {seoSettings.siteTitle || "Your Blog Title"} {seoSettings.titleSeparator} AI Blog Platform
+                                    {seoSettings.siteTitle || "Your Blog Title"}
                                 </p>
                                 <p className="text-green-700 dark:text-green-500 text-sm">
                                     {blog.subdomain}.ai-blog.vercel.app
@@ -215,33 +264,17 @@ export default function SEOPage() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="grid gap-4 md:grid-cols-2">
-                                <div className="space-y-2">
-                                    <Label htmlFor="siteTitle">Site Title</Label>
-                                    <Input
-                                        id="siteTitle"
-                                        value={seoSettings.siteTitle}
-                                        onChange={(e) => setSeoSettings(prev => ({ ...prev, siteTitle: e.target.value }))}
-                                        placeholder="Your Blog Name"
-                                    />
-                                    <p className="text-xs text-muted-foreground">
-                                        {seoSettings.siteTitle.length}/60 characters (recommended)
-                                    </p>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="titleSeparator">Title Separator</Label>
-                                    <select
-                                        id="titleSeparator"
-                                        value={seoSettings.titleSeparator}
-                                        onChange={(e) => setSeoSettings(prev => ({ ...prev, titleSeparator: e.target.value }))}
-                                        className="w-full h-10 px-3 rounded-md border bg-background"
-                                    >
-                                        <option value="-">- (Dash)</option>
-                                        <option value="|">| (Pipe)</option>
-                                        <option value="•">• (Bullet)</option>
-                                        <option value="–">– (En Dash)</option>
-                                    </select>
-                                </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="siteTitle">Site Title</Label>
+                                <Input
+                                    id="siteTitle"
+                                    value={seoSettings.siteTitle}
+                                    onChange={(e) => setSeoSettings(prev => ({ ...prev, siteTitle: e.target.value }))}
+                                    placeholder="Your Blog Name"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    {seoSettings.siteTitle.length}/60 characters (recommended)
+                                </p>
                             </div>
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
@@ -299,33 +332,14 @@ export default function SEOPage() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="flex items-center gap-6">
-                                <div className="h-32 w-56 rounded-lg bg-muted flex items-center justify-center border-2 border-dashed">
-                                    {seoSettings.ogImage ? (
-                                        <img src={seoSettings.ogImage} alt="OG" className="w-full h-full object-cover rounded-lg" />
-                                    ) : (
-                                        <Image className="h-8 w-8 text-muted-foreground" />
-                                    )}
-                                </div>
-                                <div>
-                                    <Button variant="outline">Upload Image</Button>
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                        Recommended: 1200 x 630 pixels
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="flex items-center justify-between p-4 rounded-lg bg-muted">
-                                <div>
-                                    <Label>Auto-generate OG Images</Label>
-                                    <p className="text-sm text-muted-foreground">
-                                        Generate unique images for each post
-                                    </p>
-                                </div>
-                                <Switch
-                                    checked={seoSettings.autoOgImage}
-                                    onCheckedChange={(checked) => setSeoSettings(prev => ({ ...prev, autoOgImage: checked }))}
-                                />
-                            </div>
+                            <ImageUpload
+                                value={seoSettings.ogImage ? [seoSettings.ogImage] : []}
+                                onChange={(url) => setSeoSettings(prev => ({ ...prev, ogImage: url }))}
+                                onRemove={() => setSeoSettings(prev => ({ ...prev, ogImage: "" }))}
+                            />
+                            <p className="text-sm text-muted-foreground mt-1">
+                                Recommended: 1200 x 630 pixels
+                            </p>
                         </CardContent>
                     </Card>
 
@@ -394,18 +408,7 @@ export default function SEOPage() {
                                     </Button>
                                 </div>
                             )}
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <Label>Generate Robots.txt</Label>
-                                    <p className="text-sm text-muted-foreground">
-                                        Control search engine crawling
-                                    </p>
-                                </div>
-                                <Switch
-                                    checked={seoSettings.enableRobots}
-                                    onCheckedChange={(checked) => setSeoSettings(prev => ({ ...prev, enableRobots: checked }))}
-                                />
-                            </div>
+
                             <div className="flex items-center justify-between">
                                 <div>
                                     <Label>Structured Data (JSON-LD)</Label>

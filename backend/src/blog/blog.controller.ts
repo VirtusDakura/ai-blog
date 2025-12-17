@@ -7,7 +7,6 @@ import { Public } from '../common/decorators/public.decorator';
 export class BlogController {
     constructor(private readonly blogService: BlogService) { }
 
-    @Public()
     @Post('setup')
     @HttpCode(HttpStatus.OK)
     async setupBlog(@Body() blogSetupDto: BlogSetupDto) {
@@ -15,7 +14,6 @@ export class BlogController {
         return this.blogService.setupBlog(blogSetupDto.userId, blogSetupDto);
     }
 
-    @Public()
     @Get('settings')
     async getBlogSettings(@Query('userId') userId: string) {
         if (!userId) {
@@ -28,13 +26,11 @@ export class BlogController {
         return this.blogService.getBlogSettings(userId);
     }
 
-    @Public()
     @Put('settings')
     async updateBlogSettings(@Body() body: { userId: string; settings: any }) {
         return this.blogService.updateBlogSettings(body.userId, body.settings);
     }
 
-    @Public()
     @Get('status')
     async getBlogStatus(@Query('userId') userId: string) {
         if (!userId) {
@@ -54,7 +50,6 @@ export class BlogController {
     }
 
     // Donations endpoints
-    @Public()
     @Get('donations')
     async getDonations(@Query('userId') userId: string) {
         if (!userId) return { donations: [], total: 0, count: 0 };
@@ -75,13 +70,11 @@ export class BlogController {
     }
 
     // Integrations endpoints
-    @Public()
     @Get('integrations/:blogId')
     async getIntegrations(@Param('blogId') blogId: string) {
         return this.blogService.getIntegrations(blogId);
     }
 
-    @Public()
     @Put('integrations/:blogId/:name')
     async updateIntegration(
         @Param('blogId') blogId: string,

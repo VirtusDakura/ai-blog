@@ -5,6 +5,7 @@ import GoogleProvider from "next-auth/providers/google"
 import GitHubProvider from "next-auth/providers/github"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcrypt"
+import jwt from "jsonwebtoken"
 
 // Extend the User type to include role
 interface ExtendedUser extends User {
@@ -89,12 +90,30 @@ export const authOptions: AuthOptions = {
                 token.id = user.id;
                 token.role = (user as ExtendedUser).role;
             }
+
+            // Sign a fresh token for the backend API using the same secret
+            if (!token.accessToken) {
+                try {
+                    token.accessToken = jwt.sign(
+                        {
+                            sub: token.id,
+                            email: token.email,
+                            role: token.role
+                        },
+                        process.env.NEXTAUTH_SECRET!,
+                        { expiresIn: '30d' }
+                    );
+                } catch (e) {
+                    console.error("Error signing backend token", e);
+                }
+            }
             return token;
         },
         async session({ session, token }) {
             if (session.user) {
                 (session.user as any).id = token.id as string;
                 (session.user as any).role = token.role;
+                (session as any).accessToken = token.accessToken;
             }
             return session;
         }

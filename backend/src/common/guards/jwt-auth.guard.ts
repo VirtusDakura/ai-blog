@@ -5,11 +5,16 @@ import {
     UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+import * as jwt from 'jsonwebtoken';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
-    constructor(private reflector: Reflector) { }
+    constructor(
+        private reflector: Reflector,
+        private configService: ConfigService
+    ) { }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         // Check if route is marked as public
@@ -35,18 +40,23 @@ export class JwtAuthGuard implements CanActivate {
             throw new UnauthorizedException('Invalid authorization header format');
         }
 
-        // For now, we'll validate the token exists
-        // In production, you'd verify the JWT token here
-        // This is a basic implementation - for full JWT validation,
-        // integrate with your NextAuth JWT secret
         try {
-            // Basic token validation - in production, verify with JWT secret
-            if (!token || token.length < 10) {
-                throw new UnauthorizedException('Invalid token');
+            const secret = this.configService.get<string>('NEXTAUTH_SECRET') || this.configService.get<string>('JWT_SECRET');
+
+            if (!secret) {
+                // Determine if we should fail open or closed if secret is missing? 
+                // Closed is safer.
+                console.error('JWT secret is not configured.');
+                throw new UnauthorizedException('Server authentication configuration error');
             }
 
-            // Attach user info to request (you'd decode the JWT here)
-            request.user = { token };
+            // Verify the token
+            // Note: NextAuth JWTs might need to be decoded differently depending on encryption vs signing
+            // But usually for passing to backend, it's a signed JWT.
+            const decoded = jwt.verify(token, secret);
+
+            // Attach user info to request
+            request.user = decoded;
             return true;
         } catch (error) {
             throw new UnauthorizedException('Invalid or expired token');

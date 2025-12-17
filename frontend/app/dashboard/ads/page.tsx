@@ -1,14 +1,17 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react"
+import { useBlogSettings, useUpdateBlogSettings } from "@/hooks/use-blog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
+import { useToast } from "@/hooks/use-toast"
 import {
     Megaphone, DollarSign, Code, Layout, Eye, Save, RefreshCw, Check,
     AlertCircle, PlusCircle, Trash2, GripVertical
@@ -32,35 +35,62 @@ const AD_PROVIDERS = [
 ]
 
 export default function AdsPage() {
-    const [isLoading, setIsLoading] = useState(false)
-    const [saveSuccess, setSaveSuccess] = useState(false)
+    const { data: session } = useSession()
+    const userId = (session?.user as any)?.id
+    const { toast } = useToast()
+
+    const { data: settings, isLoading } = useBlogSettings(userId)
+    const updateSettings = useUpdateBlogSettings()
 
     const [adsSettings, setAdsSettings] = useState({
         enabled: true,
-        provider: "google",
-        publisherId: "",
-        placements: {
-            header: { enabled: false, code: "" },
-            sidebar: { enabled: true, code: "" },
-            "in-article": { enabled: true, code: "" },
-            "after-post": { enabled: true, code: "" },
-            footer: { enabled: false, code: "" },
-        },
-        autoAds: false,
-        hideOnMobile: false,
-        adsTxt: "",
+        adsenseId: "",
+        adsTxtContent: "",
+        // Placeholder for more complex ad settings if supported by backend
     })
 
-    const [sponsors, setSponsors] = useState([
-        { id: 1, name: "TechCorp", logo: "", link: "https://techcorp.com", placement: "sidebar", active: true },
-    ])
+    useEffect(() => {
+        if (settings) {
+            setAdsSettings({
+                enabled: settings.adsEnabled ?? true,
+                adsenseId: settings.adsenseId || "",
+                adsTxtContent: settings.adsTxtContent || "",
+            })
+        }
+    }, [settings])
 
     const handleSave = async () => {
-        setIsLoading(true)
-        await new Promise(r => setTimeout(r, 1000))
-        setSaveSuccess(true)
-        setTimeout(() => setSaveSuccess(false), 3000)
-        setIsLoading(false)
+        if (!userId) return
+
+        try {
+            await updateSettings.mutateAsync({
+                userId,
+                settings: {
+                    adsEnabled: adsSettings.enabled,
+                    adsenseId: adsSettings.adsenseId,
+                    adsTxtContent: adsSettings.adsTxtContent,
+                }
+            })
+
+            toast({
+                title: "Settings saved",
+                description: "Ad settings have been updated.",
+            })
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "Failed to save ad settings.",
+                variant: "destructive",
+            })
+        }
+    }
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        )
     }
 
     return (
@@ -74,14 +104,8 @@ export default function AdsPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    {saveSuccess && (
-                        <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-500/10 text-green-600">
-                            <Check className="h-4 w-4" />
-                            <span className="text-sm font-medium">Saved!</span>
-                        </div>
-                    )}
-                    <Button onClick={handleSave} disabled={isLoading}>
-                        {isLoading ? (
+                    <Button onClick={handleSave} disabled={updateSettings.isPending}>
+                        {updateSettings.isPending ? (
                             <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
                             <Save className="mr-2 h-4 w-4" />
@@ -91,7 +115,7 @@ export default function AdsPage() {
                 </div>
             </div>
 
-            {/* Quick Stats */}
+            {/* Quick Stats - Placeholder as backend doesn't support ad stats yet */}
             <div className="grid gap-4 md:grid-cols-4">
                 <Card>
                     <CardContent className="pt-6">
@@ -145,14 +169,6 @@ export default function AdsPage() {
                         <Megaphone className="h-4 w-4" />
                         Ad Setup
                     </TabsTrigger>
-                    <TabsTrigger value="placements" className="gap-2">
-                        <Layout className="h-4 w-4" />
-                        Placements
-                    </TabsTrigger>
-                    <TabsTrigger value="sponsors" className="gap-2">
-                        <DollarSign className="h-4 w-4" />
-                        Sponsors
-                    </TabsTrigger>
                     <TabsTrigger value="advanced" className="gap-2">
                         <Code className="h-4 w-4" />
                         Advanced
@@ -180,200 +196,23 @@ export default function AdsPage() {
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Ad Provider</CardTitle>
+                            <CardTitle>Google AdSense</CardTitle>
                             <CardDescription>
-                                Choose your advertising network
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid gap-4 md:grid-cols-2">
-                                {AD_PROVIDERS.map((provider) => (
-                                    <button
-                                        key={provider.id}
-                                        onClick={() => setAdsSettings(prev => ({ ...prev, provider: provider.id }))}
-                                        className={`
-                                            flex items-start gap-4 p-4 rounded-xl border-2 text-left transition-all
-                                            ${adsSettings.provider === provider.id
-                                                ? "border-violet-500 bg-violet-500/5"
-                                                : "border-border hover:border-violet-500/50"
-                                            }
-                                        `}
-                                    >
-                                        <span className="text-3xl">{provider.logo}</span>
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <h4 className="font-semibold">{provider.name}</h4>
-                                                {adsSettings.provider === provider.id && (
-                                                    <Check className="h-4 w-4 text-violet-500" />
-                                                )}
-                                            </div>
-                                            <p className="text-sm text-muted-foreground">{provider.description}</p>
-                                        </div>
-                                    </button>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {adsSettings.provider === "google" && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Google AdSense</CardTitle>
-                                <CardDescription>
-                                    Enter your AdSense publisher details
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label>Publisher ID</Label>
-                                    <Input
-                                        value={adsSettings.publisherId}
-                                        onChange={(e) => setAdsSettings(prev => ({ ...prev, publisherId: e.target.value }))}
-                                        placeholder="pub-1234567890123456"
-                                    />
-                                    <p className="text-sm text-muted-foreground">
-                                        Find this in your AdSense account settings
-                                    </p>
-                                </div>
-                                <div className="flex items-center justify-between p-4 rounded-lg bg-muted">
-                                    <div>
-                                        <Label>Auto Ads</Label>
-                                        <p className="text-sm text-muted-foreground">
-                                            Let Google automatically place ads
-                                        </p>
-                                    </div>
-                                    <Switch
-                                        checked={adsSettings.autoAds}
-                                        onCheckedChange={(checked) => setAdsSettings(prev => ({ ...prev, autoAds: checked }))}
-                                    />
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-                </TabsContent>
-
-                {/* Placements */}
-                <TabsContent value="placements" className="space-y-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Ad Placements</CardTitle>
-                            <CardDescription>
-                                Choose where ads appear on your blog
+                                Enter your AdSense publisher details
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            {AD_PLACEMENTS.map((placement) => (
-                                <div
-                                    key={placement.id}
-                                    className="flex items-center justify-between p-4 rounded-lg border"
-                                >
-                                    <div className="flex items-center gap-4">
-                                        <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <p className="font-medium">{placement.name}</p>
-                                                <Badge variant="outline" className="text-xs">
-                                                    {placement.position}
-                                                </Badge>
-                                            </div>
-                                            <p className="text-sm text-muted-foreground">
-                                                {placement.description}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <Switch
-                                        checked={(adsSettings.placements as any)[placement.id]?.enabled || false}
-                                        onCheckedChange={(checked) => setAdsSettings(prev => ({
-                                            ...prev,
-                                            placements: {
-                                                ...prev.placements,
-                                                [placement.id]: { ...((prev.placements as any)[placement.id] || {}), enabled: checked }
-                                            }
-                                        }))}
-                                    />
-                                </div>
-                            ))}
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Display Options</CardTitle>
-                            <CardDescription>
-                                Additional ad display settings
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <Label>Hide on Mobile</Label>
-                                    <p className="text-sm text-muted-foreground">
-                                        Don't show ads on mobile devices
-                                    </p>
-                                </div>
-                                <Switch
-                                    checked={adsSettings.hideOnMobile}
-                                    onCheckedChange={(checked) => setAdsSettings(prev => ({ ...prev, hideOnMobile: checked }))}
+                            <div className="space-y-2">
+                                <Label>Publisher ID</Label>
+                                <Input
+                                    value={adsSettings.adsenseId}
+                                    onChange={(e) => setAdsSettings(prev => ({ ...prev, adsenseId: e.target.value }))}
+                                    placeholder="pub-1234567890123456"
                                 />
+                                <p className="text-sm text-muted-foreground">
+                                    Find this in your AdSense account settings
+                                </p>
                             </div>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                {/* Sponsors */}
-                <TabsContent value="sponsors" className="space-y-6">
-                    <Card>
-                        <CardHeader>
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <CardTitle>Direct Sponsors</CardTitle>
-                                    <CardDescription>
-                                        Manage your sponsor placements
-                                    </CardDescription>
-                                </div>
-                                <Button size="sm">
-                                    <PlusCircle className="mr-2 h-4 w-4" />
-                                    Add Sponsor
-                                </Button>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            {sponsors.length === 0 ? (
-                                <div className="text-center py-12 text-muted-foreground">
-                                    <Megaphone className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                                    <p>No sponsors yet</p>
-                                    <p className="text-sm">Add your first sponsor to display on your blog</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    {sponsors.map((sponsor) => (
-                                        <div
-                                            key={sponsor.id}
-                                            className="flex items-center justify-between p-4 rounded-lg border"
-                                        >
-                                            <div className="flex items-center gap-4">
-                                                <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center">
-                                                    💼
-                                                </div>
-                                                <div>
-                                                    <p className="font-medium">{sponsor.name}</p>
-                                                    <p className="text-sm text-muted-foreground">
-                                                        {sponsor.placement} • {sponsor.link}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <Badge variant={sponsor.active ? "default" : "secondary"}>
-                                                    {sponsor.active ? "Active" : "Inactive"}
-                                                </Badge>
-                                                <Button variant="ghost" size="icon">
-                                                    <Trash2 className="h-4 w-4 text-red-500" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -389,36 +228,11 @@ export default function AdsPage() {
                         </CardHeader>
                         <CardContent>
                             <Textarea
-                                value={adsSettings.adsTxt}
-                                onChange={(e) => setAdsSettings(prev => ({ ...prev, adsTxt: e.target.value }))}
+                                value={adsSettings.adsTxtContent}
+                                onChange={(e) => setAdsSettings(prev => ({ ...prev, adsTxtContent: e.target.value }))}
                                 placeholder="google.com, pub-1234567890123456, DIRECT, f08c47fec0942fa0"
                                 className="font-mono text-sm min-h-[150px]"
                             />
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Custom Ad Code</CardTitle>
-                            <CardDescription>
-                                Add custom ad scripts for specific placements
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label>Header Ad Code</Label>
-                                <Textarea
-                                    placeholder="<script>...</script>"
-                                    className="font-mono text-sm"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>In-Article Ad Code</Label>
-                                <Textarea
-                                    placeholder="<script>...</script>"
-                                    className="font-mono text-sm"
-                                />
-                            </div>
                         </CardContent>
                     </Card>
                 </TabsContent>

@@ -8,7 +8,6 @@ export class CategoriesController {
     constructor(private readonly categoriesService: CategoriesService) { }
 
     // Categories
-    @Public()
     @Post()
     @HttpCode(HttpStatus.CREATED)
     async createCategory(@Body() dto: CreateCategoryDto) {
@@ -22,7 +21,6 @@ export class CategoriesController {
         return this.categoriesService.getCategories(userId);
     }
 
-    @Public()
     @Put(':id')
     async updateCategory(
         @Param('id') id: string,
@@ -32,14 +30,12 @@ export class CategoriesController {
         return this.categoriesService.updateCategory(id, userId, dto);
     }
 
-    @Public()
     @Delete(':id')
     async deleteCategory(@Param('id') id: string, @Query('userId') userId: string) {
         return this.categoriesService.deleteCategory(id, userId);
     }
 
     // Tags
-    @Public()
     @Post('tags')
     @HttpCode(HttpStatus.CREATED)
     async createTag(@Body() dto: CreateTagDto) {
@@ -53,7 +49,6 @@ export class CategoriesController {
         return this.categoriesService.getTags(userId);
     }
 
-    @Public()
     @Delete('tags/:id')
     async deleteTag(@Param('id') id: string, @Query('userId') userId: string) {
         return this.categoriesService.deleteTag(id, userId);

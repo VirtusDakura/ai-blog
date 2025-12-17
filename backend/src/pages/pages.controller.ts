@@ -7,21 +7,18 @@ import { Public } from '../common/decorators/public.decorator';
 export class PagesController {
     constructor(private readonly pagesService: PagesService) { }
 
-    @Public()
     @Post()
     @HttpCode(HttpStatus.CREATED)
     async createPage(@Body() dto: CreatePageDto) {
         return this.pagesService.createPage(dto);
     }
 
-    @Public()
     @Get()
     async getPages(@Query('userId') userId: string) {
         if (!userId) return [];
         return this.pagesService.getPages(userId);
     }
 
-    @Public()
     @Get(':id')
     async getPage(@Param('id') id: string, @Query('userId') userId: string) {
         return this.pagesService.getPage(id, userId);
@@ -33,7 +30,6 @@ export class PagesController {
         return this.pagesService.getPageBySlug(userId, slug);
     }
 
-    @Public()
     @Put(':id')
     async updatePage(
         @Param('id') id: string,
@@ -43,13 +39,11 @@ export class PagesController {
         return this.pagesService.updatePage(id, userId, dto);
     }
 
-    @Public()
     @Delete(':id')
     async deletePage(@Param('id') id: string, @Query('userId') userId: string) {
         return this.pagesService.deletePage(id, userId);
     }
 
-    @Public()
     @Post('reorder')
     async reorderPages(@Body() body: { userId: string; orders: { id: string; order: number }[] }) {
         return this.pagesService.reorderPages(body.userId, body.orders);
