@@ -48,27 +48,24 @@ export function BlogProvider({ children }: { children: ReactNode }) {
             return
         }
 
+        // Get userId from session
+        const userId = (session?.user as any)?.id
+
+        if (!userId) {
+            console.log("No user ID in session, skipping blog fetch")
+            setBlogData(prev => ({ ...prev, isLoading: false }))
+            return
+        }
+
         try {
             const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
 
-            // Build headers with authorization if we have a session
-            const headers: HeadersInit = {
-                'Content-Type': 'application/json',
-            }
-
-            // Add authorization header if session has access token
-            if (session?.user) {
-                // The session might have an accessToken depending on auth setup
-                const token = (session as any)?.accessToken || (session as any)?.token
-                if (token) {
-                    headers['Authorization'] = `Bearer ${token}`
-                }
-            }
-
-            const res = await fetch(`${API_URL}/blog/settings`, {
+            // Pass userId as query parameter since we're not using cookie auth with backend
+            const res = await fetch(`${API_URL}/blog/settings?userId=${userId}`, {
                 method: 'GET',
-                credentials: 'include',
-                headers,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
             })
 
             if (res.ok) {

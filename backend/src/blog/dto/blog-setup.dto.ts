@@ -1,6 +1,10 @@
-import { IsString, IsNotEmpty, IsOptional, IsBoolean, MinLength, MaxLength, Matches } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsBoolean, MinLength, MaxLength, Matches, IsUUID } from 'class-validator';
 
 export class BlogSetupDto {
+    @IsString()
+    @IsNotEmpty()
+    userId: string;
+
     @IsString()
     @IsNotEmpty()
     @MinLength(2)

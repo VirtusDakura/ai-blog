@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -57,6 +58,7 @@ const COLOR_SCHEMES = [
 
 export default function OnboardingPage() {
     const router = useRouter()
+    const { data: session } = useSession()
     const [currentStep, setCurrentStep] = useState(1)
     const [isLoading, setIsLoading] = useState(false)
     const [domainAvailable, setDomainAvailable] = useState<boolean | null>(null)
@@ -126,6 +128,15 @@ export default function OnboardingPage() {
         setIsLoading(true)
         try {
             const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+
+            // Get userId from session
+            const userId = (session?.user as any)?.id
+
+            if (!userId) {
+                console.error("No user ID found in session")
+                throw new Error("User not authenticated")
+            }
+
             // Save blog settings and mark onboarding as completed
             const res = await fetch(`${API_URL}/blog/setup`, {
                 method: "POST",
@@ -133,12 +144,15 @@ export default function OnboardingPage() {
                 credentials: 'include',
                 body: JSON.stringify({
                     ...formData,
+                    userId, // Pass userId explicitly
                     onboardingCompleted: true,
                 }),
             })
 
             if (!res.ok) {
-                throw new Error("Failed to save blog settings")
+                const errorData = await res.json().catch(() => ({}))
+                console.error("API Error:", errorData)
+                throw new Error(errorData.message || "Failed to save blog settings")
             }
 
             router.push("/dashboard?welcome=true")

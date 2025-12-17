@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, Query, Req, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, Query, HttpCode, HttpStatus } from '@nestjs/common';
 import { BlogService } from './blog.service';
 import { BlogSetupDto } from './dto/blog-setup.dto';
 import { Public } from '../common/decorators/public.decorator';
@@ -7,31 +7,43 @@ import { Public } from '../common/decorators/public.decorator';
 export class BlogController {
     constructor(private readonly blogService: BlogService) { }
 
+    @Public()
     @Post('setup')
     @HttpCode(HttpStatus.OK)
-    async setupBlog(@Req() req: any, @Body() blogSetupDto: BlogSetupDto) {
-        // In production, get userId from authenticated user
-        // For now, we'll get it from request (set by auth middleware)
-        const userId = req.user?.id || req.body.userId;
-        return this.blogService.setupBlog(userId, blogSetupDto);
+    async setupBlog(@Body() blogSetupDto: BlogSetupDto) {
+        // userId is now a required field in the DTO
+        return this.blogService.setupBlog(blogSetupDto.userId, blogSetupDto);
     }
 
+    @Public()
     @Get('settings')
-    async getBlogSettings(@Req() req: any) {
-        const userId = req.user?.id;
+    async getBlogSettings(@Query('userId') userId: string) {
+        if (!userId) {
+            return {
+                blogName: null,
+                subdomain: null,
+                hasCompletedOnboarding: false,
+            };
+        }
         return this.blogService.getBlogSettings(userId);
     }
 
+    @Public()
     @Get('status')
-    async getBlogStatus(@Req() req: any) {
-        const userId = req.user?.id;
+    async getBlogStatus(@Query('userId') userId: string) {
+        if (!userId) {
+            return {
+                hasCompletedOnboarding: false,
+                subdomain: null,
+                blogName: null,
+            };
+        }
         return this.blogService.getBlogStatus(userId);
     }
 
     @Public()
     @Get('check-subdomain')
-    async checkSubdomain(@Query('subdomain') subdomain: string, @Req() req: any) {
-        const userId = req.user?.id;
+    async checkSubdomain(@Query('subdomain') subdomain: string, @Query('userId') userId?: string) {
         return this.blogService.checkSubdomainAvailability(subdomain, userId);
     }
 
