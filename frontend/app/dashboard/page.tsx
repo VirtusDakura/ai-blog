@@ -96,8 +96,6 @@ function DashboardContent() {
 
     // Get the full blog URL (links to /blog during development)
     const blogUrl = getBlogUrl(blog.subdomain, blog.customDomain)
-    // Display domain shows what the subdomain will be when deployed
-    const displayDomain = getDisplayDomain(blog.subdomain, blog.customDomain)
 
     const toggleTask = (taskId: string) => {
         setCompletedTasks(prev =>
@@ -136,6 +134,10 @@ function DashboardContent() {
         )
     }
 
+    // Get display values - show actual data or "Setup Required"
+    const blogName = blog.blogName || 'Setup Required'
+    const displayDomainText = blog.subdomain ? getDisplayDomain(blog.subdomain, blog.customDomain) : 'Complete onboarding to set up your blog'
+
     return (
         <div className="space-y-8">
             {/* Welcome Banner - Only shown after onboarding */}
@@ -161,7 +163,7 @@ function DashboardContent() {
                                 <Rocket className="h-8 w-8" />
                             </div>
                             <div>
-                                <h2 className="text-2xl font-bold">Welcome to {blog.blogName}! 🎉</h2>
+                                <h2 className="text-2xl font-bold">Welcome to {blogName}! 🎉</h2>
                                 <p className="text-white/80">Your blog is ready. Let's make it awesome!</p>
                             </div>
                         </div>
@@ -173,7 +175,7 @@ function DashboardContent() {
                                 className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors"
                             >
                                 <Globe className="h-4 w-4" />
-                                <span className="font-mono text-sm">{displayDomain}</span>
+                                <span className="font-mono text-sm">{displayDomainText}</span>
                             </Link>
                             <Button
                                 variant="secondary"
@@ -205,14 +207,14 @@ function DashboardContent() {
                         <BookOpen className="h-8 w-8" />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">{blog.blogName}</h1>
+                        <h1 className="text-3xl font-bold tracking-tight">{blogName}</h1>
                         <div className="flex items-center gap-2 mt-1">
                             <Globe className="h-4 w-4 text-muted-foreground" />
                             <Link
                                 href="/blog"
                                 className="text-muted-foreground font-mono text-sm hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
                             >
-                                {displayDomain}
+                                {displayDomainText}
                             </Link>
                             <button
                                 onClick={copyDomain}

@@ -23,8 +23,8 @@ interface BlogData {
 }
 
 const defaultBlogData: BlogData = {
-    blogName: 'My Blog',
-    subdomain: 'my-blog',
+    blogName: '',
+    subdomain: '',
     theme: 'minimal',
     colorScheme: 'violet',
     hasCompletedOnboarding: false,
@@ -50,35 +50,49 @@ export function BlogProvider({ children }: { children: ReactNode }) {
 
         try {
             const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+
+            // Build headers with authorization if we have a session
+            const headers: HeadersInit = {
+                'Content-Type': 'application/json',
+            }
+
+            // Add authorization header if session has access token
+            if (session?.user) {
+                // The session might have an accessToken depending on auth setup
+                const token = (session as any)?.accessToken || (session as any)?.token
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`
+                }
+            }
+
             const res = await fetch(`${API_URL}/blog/settings`, {
+                method: 'GET',
                 credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers,
             })
 
             if (res.ok) {
                 const data = await res.json()
+
                 // Only update if we have actual data from the API
-                if (data && (data.blogName || data.subdomain)) {
+                if (data) {
                     setBlogData({
-                        blogName: data.blogName || 'My Blog',
-                        blogDescription: data.blogDescription,
-                        subdomain: data.subdomain || 'my-blog',
-                        customDomain: data.customDomain,
-                        category: data.category,
+                        blogName: data.blogName || '',
+                        blogDescription: data.blogDescription || '',
+                        subdomain: data.subdomain || '',
+                        customDomain: data.customDomain || '',
+                        category: data.category || '',
                         theme: data.theme || 'minimal',
                         colorScheme: data.colorScheme || 'violet',
-                        displayName: data.displayName,
-                        bio: data.bio,
-                        profileImage: data.profileImage,
-                        timezone: data.timezone,
-                        language: data.language,
+                        displayName: data.displayName || '',
+                        bio: data.bio || '',
+                        profileImage: data.profileImage || '',
+                        timezone: data.timezone || '',
+                        language: data.language || '',
                         hasCompletedOnboarding: data.hasCompletedOnboarding || false,
                         isLoading: false,
                     })
                 } else {
-                    // No blog data yet - user needs to complete onboarding
                     setBlogData(prev => ({
                         ...prev,
                         isLoading: false,
@@ -86,11 +100,11 @@ export function BlogProvider({ children }: { children: ReactNode }) {
                     }))
                 }
             } else {
-                // API call failed - use defaults
+                console.error('Failed to fetch blog settings:', res.status, res.statusText)
                 setBlogData(prev => ({
                     ...prev,
                     isLoading: false,
-                    error: 'Failed to fetch blog data',
+                    error: `Failed to fetch blog data: ${res.status}`,
                 }))
             }
         } catch (error) {
@@ -104,8 +118,10 @@ export function BlogProvider({ children }: { children: ReactNode }) {
     }
 
     useEffect(() => {
-        fetchBlogData()
-    }, [status])
+        if (status !== 'loading') {
+            fetchBlogData()
+        }
+    }, [status, session])
 
     return (
         <BlogContext.Provider value={{ ...blogData, refetch: fetchBlogData }}>
@@ -118,22 +134,17 @@ export function useBlog() {
     return useContext(BlogContext)
 }
 
-// Helper to get the blog URL - uses local /blog route during development
-// In production with proper subdomain config, this would use the subdomain
+// Helper to get the blog URL - uses local /blog route
 export function getBlogUrl(subdomain: string, customDomain?: string): string {
-    // If custom domain is set, use it
     if (customDomain) {
         return `https://${customDomain}`
     }
 
-    // In development or when subdomains aren't configured, link to local /blog page
-    // This ensures the link is always functional
+    // Link to local /blog page (fully functional)
     if (typeof window !== 'undefined') {
-        const baseUrl = window.location.origin
-        return `${baseUrl}/blog`
+        return `${window.location.origin}/blog`
     }
 
-    // Fallback for SSR
     return '/blog'
 }
 
@@ -142,6 +153,8 @@ export function getDisplayDomain(subdomain: string, customDomain?: string): stri
     if (customDomain) {
         return customDomain
     }
-    // Show what the subdomain would be when deployed
-    return `${subdomain}.ai-blog.vercel.app`
+    if (subdomain) {
+        return `${subdomain}.ai-blog.vercel.app`
+    }
+    return 'Not configured'
 }

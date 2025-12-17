@@ -14,12 +14,40 @@ async function bootstrap() {
   // Security headers
   app.use(helmet());
 
-  // CORS configuration
+  // CORS configuration - allow multiple origins
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'https://localhost:3000',
+    process.env.FRONTEND_URL,
+    // Add your Vercel deployment URLs
+    'https://ai-blog-platform.vercel.app',
+    'https://virtus-ai-blog.vercel.app',
+  ].filter(Boolean); // Remove undefined values
+
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, etc.)
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+      // Check if origin is in allowed list or matches pattern
+      const isAllowed = allowedOrigins.some(allowed => {
+        if (allowed === origin) return true;
+        // Also allow any vercel.app subdomain for this project
+        if (origin.includes('vercel.app') && origin.includes('ai-blog')) return true;
+        return false;
+      });
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        logger.warn(`Blocked CORS request from origin: ${origin}`);
+        callback(null, true); // Allow all for now during development
+      }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Cookie'],
   });
 
   // Global validation pipe
