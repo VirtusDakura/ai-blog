@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Session and dynamic data type casting */
 "use client"
 
 import { useState } from "react"
 import { useSession } from "next-auth/react"
-import { useCommentsModeration, useModerateComment, useBulkModerateComments } from "@/hooks/use-cms"
+import { useCommentsModeration, useModerateComment } from "@/hooks/use-cms"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
@@ -27,9 +28,8 @@ export default function CommentsPage() {
 
     const { data: commentsData, isLoading } = useCommentsModeration(userId, statusFilter)
     const moderateComment = useModerateComment()
-    const deleteComment = useModerateComment() // Reuse moderate for delete if implemented or use separate
 
-    const comments = commentsData?.comments || []
+    const comments = commentsData?.data || []
     const meta = commentsData?.meta || { total: 0, pending: 0, approved: 0, spam: 0 }
 
     const [searchQuery, setSearchQuery] = useState("")
@@ -40,24 +40,23 @@ export default function CommentsPage() {
         return true
     })
 
-    const handleModerate = async (id: string, status: string) => {
+    const handleModerate = async (commentId: string, action: 'approve' | 'reject' | 'spam') => {
         if (!userId) return
         try {
-            await moderateComment.mutateAsync({ userId, commentId: id, status })
-            toast({ title: "Comment updated", description: `Comment marked as ${status.toLowerCase()}` })
-        } catch (error) {
+            await moderateComment.mutateAsync({ id: commentId, userId, action })
+            toast({ title: "Comment updated", description: `Comment marked as ${action}` })
+        } catch {
             toast({ title: "Error", description: "Failed to update comment", variant: "destructive" })
         }
     }
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = async (commentId: string) => {
         if (!userId) return
         try {
-            // Assuming we have a delete endpoint or using a deleted status
-            // For now, let's assume 'REJECTED' effectively hides it or use a specific delete mutation if available in hooks
-            await moderateComment.mutateAsync({ userId, commentId: id, status: 'REJECTED' })
+            // Using 'reject' action to effectively hide/delete the comment
+            await moderateComment.mutateAsync({ id: commentId, userId, action: 'reject' })
             toast({ title: "Comment deleted" })
-        } catch (error) {
+        } catch {
             toast({ title: "Error", description: "Failed to delete comment", variant: "destructive" })
         }
     }
@@ -212,7 +211,7 @@ export default function CommentsPage() {
                                                                 <Button
                                                                     variant="outline"
                                                                     size="sm"
-                                                                    onClick={() => handleModerate(comment.id, 'APPROVED')}
+                                                                    onClick={() => handleModerate(comment.id, 'approve')}
                                                                     className="text-green-600 hover:text-green-700 hover:bg-green-50"
                                                                 >
                                                                     <Check className="mr-1 h-3 w-3" />
@@ -221,7 +220,7 @@ export default function CommentsPage() {
                                                                 <Button
                                                                     variant="outline"
                                                                     size="sm"
-                                                                    onClick={() => handleModerate(comment.id, 'REJECTED')}
+                                                                    onClick={() => handleModerate(comment.id, 'reject')}
                                                                     className="text-red-600 hover:text-red-700 hover:bg-red-50"
                                                                 >
                                                                     <X className="mr-1 h-3 w-3" />
@@ -236,7 +235,7 @@ export default function CommentsPage() {
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
-                                                            onClick={() => handleModerate(comment.id, 'SPAM')}
+                                                            onClick={() => handleModerate(comment.id, 'spam')}
                                                         >
                                                             <Flag className="mr-1 h-3 w-3" />
                                                             Spam

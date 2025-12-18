@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Session type casting */
 "use client"
 
 import { useState, useEffect } from "react"
@@ -24,7 +25,7 @@ export default function MonetizationPage() {
 
     // Fetch data
     const { data: settings, isLoading: isLoadingSettings } = useBlogSettings(userId)
-    const { data: donationData, isLoading: isLoadingDonations } = useDonations(userId)
+    const { data: donationData } = useDonations(userId)
     const updateSettings = useUpdateBlogSettings()
 
     // State
@@ -73,7 +74,8 @@ export default function MonetizationPage() {
         message: "If you enjoy my content, consider supporting my work!",
     })
 
-    // Update state when settings are loaded
+    // Sync settings from server to local state for form editing
+
     useEffect(() => {
         if (settings) {
             // Update methods enablement
@@ -140,7 +142,7 @@ export default function MonetizationPage() {
     }
 
     // Calculate growth (mock for now as we don't have historical data structure yet)
-    const growthPercent = "0.0"
+    // growthPercent will be used in future updates when historical data is available
 
     if (isLoadingSettings) {
         return (
@@ -382,7 +384,7 @@ export default function MonetizationPage() {
                                                 <div>
                                                     <p className="font-medium">{donation.donorName || "Anonymous"}</p>
                                                     {donation.message && (
-                                                        <p className="text-sm text-muted-foreground">"{donation.message}"</p>
+                                                        <p className="text-sm text-muted-foreground">&ldquo;{donation.message}&rdquo;</p>
                                                     )}
                                                 </div>
                                             </div>
@@ -431,7 +433,7 @@ export default function MonetizationPage() {
                                     placeholder="your@email.com"
                                 />
                                 <p className="text-sm text-muted-foreground">
-                                    We'll send payouts to this PayPal address
+                                    We&apos;ll send payouts to this PayPal address
                                 </p>
                             </div>
                             <div className="space-y-2">
@@ -446,7 +448,7 @@ export default function MonetizationPage() {
                                     />
                                 </div>
                                 <p className="text-sm text-muted-foreground">
-                                    We'll send your payout when your balance reaches this amount
+                                    We&apos;ll send your payout when your balance reaches this amount
                                 </p>
                             </div>
                         </CardContent>

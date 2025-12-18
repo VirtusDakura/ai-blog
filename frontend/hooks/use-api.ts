@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Session type casting is needed for next-auth custom properties */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 
@@ -48,7 +49,7 @@ export interface CreatePostInput {
     authorId?: string;
 }
 
-export interface UpdatePostInput extends Partial<CreatePostInput> { }
+export type UpdatePostInput = Partial<CreatePostInput>;
 
 export interface GeneratePostInput {
     topic: string;
@@ -398,7 +399,7 @@ export function useUpdateComment() {
     const token = (session as any)?.accessToken;
 
     return useMutation({
-        mutationFn: ({ id, content, postId }: { id: string; content: string; postId: string }) =>
+        mutationFn: ({ id, content }: { id: string; content: string; postId: string }) =>
             fetchAPI<Comment>(`/comments/${id}`, {
                 method: 'PATCH',
                 body: JSON.stringify({ content }),
@@ -417,7 +418,7 @@ export function useDeleteComment() {
     const token = (session as any)?.accessToken;
 
     return useMutation({
-        mutationFn: ({ id, postId }: { id: string; postId: string }) =>
+        mutationFn: ({ id }: { id: string; postId: string }) =>
             fetchAPI<void>(`/comments/${id}`, {
                 method: 'DELETE',
                 headers: token ? { Authorization: `Bearer ${token}` } : {}

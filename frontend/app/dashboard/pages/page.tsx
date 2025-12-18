@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Session and dynamic data type casting */
 "use client"
 
 import { useState } from "react"
@@ -43,7 +44,6 @@ const PAGE_TEMPLATES = [
 export default function PagesPage() {
     const { data: session } = useSession()
     const userId = (session?.user as any)?.id
-    const blogId = (session?.user as any)?.blogId // Assuming context
     const { toast } = useToast()
 
     const { data: pages = [], isLoading } = usePages(userId)
@@ -74,28 +74,28 @@ export default function PagesPage() {
             setIsCreateDialogOpen(false)
             setNewPage({ title: "", slug: "", template: "default" })
             toast({ title: "Success", description: "Page created successfully" })
-        } catch (error) {
+        } catch {
             toast({ title: "Error", description: "Failed to create page", variant: "destructive" })
         }
     }
 
-    const handleDeletePage = async (id: string) => {
+    const handleDeletePage = async (pageId: string) => {
         if (!userId) return
         try {
-            await deletePage.mutateAsync({ userId, pageId: id })
+            await deletePage.mutateAsync({ id: pageId, userId })
             toast({ title: "Success", description: "Page deleted" })
-        } catch (error) {
+        } catch {
             toast({ title: "Error", description: "Failed to delete page", variant: "destructive" })
         }
     }
 
-    const handleToggleStatus = async (page: any) => {
+    const handleToggleStatus = async (page: { id: string; status: string }) => {
         if (!userId) return
         const newStatus = page.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED"
         try {
-            await updatePage.mutateAsync({ userId, pageId: page.id, data: { status: newStatus } })
+            await updatePage.mutateAsync({ id: page.id, data: { status: newStatus }, userId })
             toast({ title: "Success", description: `Page ${newStatus.toLowerCase()}` })
-        } catch (error) {
+        } catch {
             toast({ title: "Error", description: "Failed to update page status", variant: "destructive" })
         }
     }
@@ -125,7 +125,7 @@ export default function PagesPage() {
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Pages</h1>
                     <p className="text-muted-foreground">
-                        Manage your blog's static pages
+                        Manage your blog&apos;s static pages
                     </p>
                 </div>
                 <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>

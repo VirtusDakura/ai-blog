@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Session and dynamic data type casting */
 "use client"
 
 import { useState, useEffect } from "react"
@@ -35,7 +36,7 @@ export default function SubscribersPage() {
 
     // Data Fetching
     const { data: subscribers = [], isLoading: isLoadingSubscribers } = useSubscribers(userId)
-    const { data: stats = {}, isLoading: isLoadingStats } = useSubscriberStats(userId)
+    const { data: stats = { total: 0, active: 0, growth: 0 }, isLoading: isLoadingStats } = useSubscriberStats(userId)
     const { data: campaigns = [], isLoading: isLoadingCampaigns } = useCampaigns(userId)
     const { data: settings } = useBlogSettings(userId)
 
@@ -54,6 +55,7 @@ export default function SubscribersPage() {
         weeklyDigest: false,
         newPostNotification: true,
     })
+
 
     useEffect(() => {
         if (settings) {
@@ -92,7 +94,7 @@ export default function SubscribersPage() {
                 }
             })
             toast({ title: "Settings saved" })
-        } catch (error) {
+        } catch {
             toast({ title: "Error", description: "Failed to save settings", variant: "destructive" })
         }
     }
@@ -110,7 +112,7 @@ export default function SubscribersPage() {
             setIsCampaignDialogOpen(false)
             setNewCampaign({ subject: "", content: "" })
             toast({ title: "Campaign created", description: "Draft campaign created successfully" })
-        } catch (error) {
+        } catch {
             toast({ title: "Error", description: "Failed to create campaign", variant: "destructive" })
         }
     }

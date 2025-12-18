@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Session type casting is needed for next-auth custom properties */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 
@@ -277,7 +278,7 @@ export function useSubscriberStats(userId: string) {
 
     return useQuery({
         queryKey: ['subscriber-stats', userId],
-        queryFn: () => fetchAPI<{ total: number; active: number; growth: number }>(`/subscribers/stats?userId=${userId}`, {
+        queryFn: () => fetchAPI<{ total: number; active: number; growth: number; avgOpenRate?: number; avgClickRate?: number }>(`/subscribers/stats?userId=${userId}`, {
             headers: token ? { Authorization: `Bearer ${token}` } : {}
         }),
         enabled: !!userId && !!token,

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Session type casting */
 "use client"
 
 import { useState } from "react"
@@ -26,7 +27,6 @@ import {
 export default function CategoriesPage() {
     const { data: session } = useSession()
     const userId = (session?.user as any)?.id
-    const blogId = (session?.user as any)?.blogId // Assuming specific blog context if multi-blog
     const { toast } = useToast()
 
     // Data fetching
@@ -56,7 +56,7 @@ export default function CategoriesPage() {
             setNewCategory({ name: "", description: "" })
             setIsDialogOpen(false)
             toast({ title: "Success", description: "Category created successfully" })
-        } catch (error) {
+        } catch {
             toast({ title: "Error", description: "Failed to create category", variant: "destructive" })
         }
     }
@@ -71,27 +71,27 @@ export default function CategoriesPage() {
             })
             setNewTag("")
             toast({ title: "Success", description: "Tag created successfully" })
-        } catch (error) {
+        } catch {
             toast({ title: "Error", description: "Failed to create tag", variant: "destructive" })
         }
     }
 
-    const handleDeleteCategory = async (id: string) => {
+    const handleDeleteCategory = async (categoryId: string) => {
         if (!userId) return
         try {
-            await deleteCategory.mutateAsync({ userId, categoryId: id })
+            await deleteCategory.mutateAsync({ id: categoryId, userId })
             toast({ title: "Success", description: "Category deleted" })
-        } catch (error) {
+        } catch {
             toast({ title: "Error", description: "Failed to delete category", variant: "destructive" })
         }
     }
 
-    const handleDeleteTag = async (id: string) => {
+    const handleDeleteTag = async (tagId: string) => {
         if (!userId) return
         try {
-            await deleteTag.mutateAsync({ userId, tagId: id })
+            await deleteTag.mutateAsync({ id: tagId, userId })
             toast({ title: "Success", description: "Tag deleted" })
-        } catch (error) {
+        } catch {
             toast({ title: "Error", description: "Failed to delete tag", variant: "destructive" })
         }
     }

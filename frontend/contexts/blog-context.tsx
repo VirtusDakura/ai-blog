@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
 import { useSession } from 'next-auth/react'
 
 interface BlogData {
@@ -41,7 +41,7 @@ export function BlogProvider({ children }: { children: ReactNode }) {
         isLoading: true,
     })
 
-    const fetchBlogData = async () => {
+    const fetchBlogData = useCallback(async () => {
         if (status === 'loading') return
         if (status === 'unauthenticated') {
             setBlogData(prev => ({ ...prev, isLoading: false }))
@@ -49,7 +49,7 @@ export function BlogProvider({ children }: { children: ReactNode }) {
         }
 
         // Get userId from session
-        const userId = (session?.user as any)?.id
+        const userId = (session?.user as { id?: string })?.id
 
         if (!userId) {
             console.log("No user ID in session, skipping blog fetch")
@@ -112,13 +112,14 @@ export function BlogProvider({ children }: { children: ReactNode }) {
                 error: 'Failed to fetch blog data',
             }))
         }
-    }
+    }, [status, session])
 
+     
     useEffect(() => {
         if (status !== 'loading') {
             fetchBlogData()
         }
-    }, [status, session])
+    }, [status, fetchBlogData])
 
     return (
         <BlogContext.Provider value={{ ...blogData, refetch: fetchBlogData }}>

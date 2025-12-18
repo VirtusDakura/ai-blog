@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Session type casting is needed for next-auth custom properties */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 
@@ -44,9 +45,18 @@ export interface BlogSettings {
     emailOnSubscriber?: boolean;
     emailDigest?: string;
 
+    // Newsletter settings
+    newsletterEnabled?: boolean;
+    newsletterDoubleOptIn?: boolean;
+    newsletterWelcomeEmail?: boolean;
+    newsletterWeeklyDigest?: boolean;
+    newsletterNewPostNotification?: boolean;
+
+    // Monetization settings
     donationsEnabled?: boolean;
     donationMessage?: string;
     suggestedAmounts?: string;
+    stripeConnected?: boolean;
     paypalEmail?: string;
     minimumPayout?: number;
 

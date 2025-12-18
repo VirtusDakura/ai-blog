@@ -14,12 +14,10 @@ import {
     FileText,
     Eye,
     Clock,
-    TrendingUp,
     Sparkles,
     ArrowRight,
     BookOpen,
     Globe,
-    Palette,
     Settings,
     Users,
     BarChart3,
@@ -164,7 +162,7 @@ function DashboardContent() {
                             </div>
                             <div>
                                 <h2 className="text-2xl font-bold">Welcome to {blogName}! 🎉</h2>
-                                <p className="text-white/80">Your blog is ready. Let's make it awesome!</p>
+                                <p className="text-white/80">Your blog is ready. Let&apos;s make it awesome!</p>
                             </div>
                         </div>
 
