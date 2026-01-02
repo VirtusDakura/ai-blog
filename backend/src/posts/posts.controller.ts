@@ -34,7 +34,9 @@ export class PostsController {
     @Body() createPostDto: CreatePostDto,
     @CurrentUser() user: JwtPayload,
   ) {
+    console.log('Posts create - user from JWT:', user);
     const userId = user?.sub || user?.id || createPostDto.authorId;
+    console.log('Posts create - extracted userId:', userId);
     if (!userId) {
       throw new UnauthorizedException('User ID is required');
     }

@@ -23,6 +23,8 @@ services:
         sync: false # User needs to add this manually (or use Render Redis)
       - key: FRONTEND_URL
         sync: false # User needs to add this - the Vercel frontend URL
+      - key: NEXTAUTH_SECRET
+        sync: false # CRITICAL: Must match the frontend's NEXTAUTH_SECRET for JWT verification
       - key: GROQ_API_KEY
         sync: false
       - key: HF_API_TOKEN

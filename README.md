@@ -88,6 +88,7 @@ NEXTAUTH_SECRET=your-secret-here
 DATABASE_URL=postgresql://...
 REDIS_URL=redis://localhost:6379
 FRONTEND_URL=http://localhost:3000
+NEXTAUTH_SECRET=your-secret-here  # MUST match frontend secret!
 GROQ_API_KEY=your-groq-key
 HF_API_TOKEN=your-huggingface-token
 ```

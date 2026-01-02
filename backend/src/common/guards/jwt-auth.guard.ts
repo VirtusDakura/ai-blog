@@ -54,11 +54,19 @@ export class JwtAuthGuard implements CanActivate {
             // Note: NextAuth JWTs might need to be decoded differently depending on encryption vs signing
             // But usually for passing to backend, it's a signed JWT.
             const decoded = jwt.verify(token, secret);
+            
+            // Debug logging (can be removed in production)
+            console.log('JWT decoded successfully:', {
+                sub: (decoded as any).sub,
+                email: (decoded as any).email,
+                hasUser: !!decoded
+            });
 
             // Attach user info to request
             request.user = decoded;
             return true;
         } catch (error) {
+            console.error('JWT verification failed:', (error as Error).message);
             throw new UnauthorizedException('Invalid or expired token');
         }
     }

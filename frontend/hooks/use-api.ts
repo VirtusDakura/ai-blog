@@ -158,14 +158,16 @@ export function usePostBySlug(slug: string) {
 // Hook to create a post
 export function useCreatePost() {
     const queryClient = useQueryClient();
-    const { getToken } = useGetToken();
+    const { getToken, isAuthenticated } = useGetToken();
 
     return useMutation({
-        mutationFn: (data: CreatePostInput) => {
+        mutationFn: async (data: CreatePostInput) => {
             const token = getToken();
             if (!token) {
-                return Promise.reject(new Error('Not authenticated. Please log in.'));
+                console.error('useCreatePost: No token available. isAuthenticated:', isAuthenticated);
+                throw new Error('Not authenticated. Please log in again.');
             }
+            console.log('useCreatePost: Sending request with token');
             return fetchWithAuth<Post>('/posts', token, {
                 method: 'POST',
                 body: JSON.stringify(data),

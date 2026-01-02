@@ -91,14 +91,19 @@ export const authOptions: AuthOptions = {
                 token.role = (user as ExtendedUser).role;
             }
 
-            // Sign a fresh token for the backend API using the same secret
-            if (!token.accessToken) {
+            // Use token.sub as fallback if token.id is not set (happens with existing sessions)
+            const userId = token.id || token.sub;
+
+            // Always regenerate accessToken to ensure it's fresh and has the correct user ID
+            // This ensures the backend can always verify the user
+            if (userId) {
                 try {
                     token.accessToken = jwt.sign(
                         {
-                            sub: token.id,
+                            sub: userId,
                             email: token.email,
-                            role: token.role
+                            role: token.role,
+                            iat: Math.floor(Date.now() / 1000)
                         },
                         process.env.NEXTAUTH_SECRET!,
                         { expiresIn: '30d' }
@@ -106,12 +111,14 @@ export const authOptions: AuthOptions = {
                 } catch (e) {
                     console.error("Error signing backend token", e);
                 }
+            } else {
+                console.error("No user ID available for token signing");
             }
             return token;
         },
         async session({ session, token }) {
             if (session.user) {
-                (session.user as any).id = token.id as string;
+                (session.user as any).id = (token.id || token.sub) as string;
                 (session.user as any).role = token.role;
                 (session as any).accessToken = token.accessToken;
             }
