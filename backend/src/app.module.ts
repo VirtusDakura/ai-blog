@@ -13,6 +13,7 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { BlogModule } from './blog/blog.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { CommentsModule } from './comments/comments.module';
 import { CategoriesModule } from './categories/categories.module';
 import { PagesModule } from './pages/pages.module';
@@ -76,6 +77,10 @@ import { SubscribersModule } from './subscribers/subscribers.module';
     AppService,
     {
       provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
     {
@@ -84,4 +89,4 @@ import { SubscribersModule } from './subscribers/subscribers.module';
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}
