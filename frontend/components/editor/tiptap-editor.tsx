@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useEditor, EditorContent } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import Image from "@tiptap/extension-image"
@@ -26,21 +26,27 @@ export function TiptapEditor({ content, onChange }: TiptapEditorProps) {
     const generatePost = useGeneratePost()
     const { toast } = useToast()
 
+    // Memoize extensions to prevent recreation on each render
+    const extensions = useMemo(() => [
+        StarterKit.configure({
+            heading: {
+                levels: [1, 2, 3],
+            },
+        }),
+        Placeholder.configure({
+            placeholder: "Write something amazing...",
+        }),
+        Image,
+        Link.configure({
+            openOnClick: false,
+            HTMLAttributes: {
+                class: "text-primary underline",
+            },
+        }),
+    ], [])
+
     const editor = useEditor({
-        extensions: [
-            StarterKit.configure({
-                heading: {
-                    levels: [1, 2, 3],
-                },
-            }),
-            Placeholder.configure({
-                placeholder: "Write something amazing...",
-            }),
-            Image,
-            Link.configure({
-                openOnClick: false,
-            }),
-        ],
+        extensions,
         content,
         editorProps: {
             attributes: {
