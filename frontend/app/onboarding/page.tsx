@@ -9,9 +9,34 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import {
     BookOpen, ArrowRight, ArrowLeft, Check, Sparkles, Globe, Palette, User,
-    Rocket, PenTool, Layout, Sun, Moon, Zap, Image, Clock, Tag, Languages,
-    CheckCircle2, Edit3, RefreshCw, Copy, ExternalLink
+    Rocket, PenTool, Layout, Zap, Image as ImageIcon, Clock, Tag, Languages,
+    CheckCircle2, Edit3, RefreshCw, ExternalLink
 } from "lucide-react"
+
+// Type for extended session user
+interface ExtendedUser {
+    id?: string
+    name?: string | null
+    email?: string | null
+    image?: string | null
+}
+
+// Form data type
+interface FormData {
+    blogName: string
+    blogDescription: string
+    subdomain: string
+    customDomain: string
+    useCustomDomain: boolean
+    category: string
+    theme: string
+    colorScheme: string
+    displayName: string
+    bio: string
+    profileImage: string
+    timezone: string
+    language: string
+}
 
 // Step definitions
 const STEPS = [
@@ -58,14 +83,15 @@ const COLOR_SCHEMES = [
 
 export default function OnboardingPage() {
     const router = useRouter()
-    const { data: session } = useSession()
+    const { data: session, status } = useSession()
     const [currentStep, setCurrentStep] = useState(1)
     const [isLoading, setIsLoading] = useState(false)
+    const [isCheckingStatus, setIsCheckingStatus] = useState(true)
     const [domainAvailable, setDomainAvailable] = useState<boolean | null>(null)
     const [isEditingDomain, setIsEditingDomain] = useState(false)
 
     // Form data
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<FormData>({
         blogName: "",
         blogDescription: "",
         subdomain: "",
@@ -80,6 +106,40 @@ export default function OnboardingPage() {
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         language: "en",
     })
+
+    // Check if user has already completed onboarding
+    useEffect(() => {
+        const checkOnboardingStatus = async () => {
+            if (status === 'loading') return
+            if (status === 'unauthenticated') {
+                router.push('/login')
+                return
+            }
+
+            const userId = (session?.user as ExtendedUser)?.id
+            if (!userId) {
+                setIsCheckingStatus(false)
+                return
+            }
+
+            try {
+                const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+                const res = await fetch(`${API_URL}/blog/status?userId=${userId}`)
+                const data = await res.json()
+
+                if (data.hasCompletedOnboarding) {
+                    router.push('/dashboard')
+                    return
+                }
+            } catch (error) {
+                console.error('Error checking onboarding status:', error)
+            }
+
+            setIsCheckingStatus(false)
+        }
+
+        checkOnboardingStatus()
+    }, [session, status, router])
 
     // Generate subdomain from blog name
     const generateSubdomain = useCallback((name: string) => {
@@ -100,13 +160,11 @@ export default function OnboardingPage() {
         }
     }, [formData.blogName, generateSubdomain, isEditingDomain])
 
-    // Check domain availability (simulated)
+    // Check domain availability
     const checkDomainAvailability = async () => {
         if (!formData.subdomain) return
         setIsLoading(true)
-        // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 1000))
-        // For demo, randomly available or check against reserved words
         const reserved = ["admin", "api", "www", "blog", "app", "dashboard"]
         setDomainAvailable(!reserved.includes(formData.subdomain.toLowerCase()))
         setIsLoading(false)
@@ -128,23 +186,20 @@ export default function OnboardingPage() {
         setIsLoading(true)
         try {
             const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
-
-            // Get userId from session
-            const userId = (session?.user as any)?.id
+            const userId = (session?.user as ExtendedUser)?.id
 
             if (!userId) {
                 console.error("No user ID found in session")
                 throw new Error("User not authenticated")
             }
 
-            // Save blog settings and mark onboarding as completed
             const res = await fetch(`${API_URL}/blog/setup`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: 'include',
                 body: JSON.stringify({
                     ...formData,
-                    userId, // Pass userId explicitly
+                    userId,
                     onboardingCompleted: true,
                 }),
             })
@@ -159,8 +214,6 @@ export default function OnboardingPage() {
             router.refresh()
         } catch (error) {
             console.error("Onboarding error:", error)
-            // Even if API fails, redirect to dashboard
-            // The user can complete setup later
             router.push("/dashboard")
         } finally {
             setIsLoading(false)
@@ -213,6 +266,20 @@ export default function OnboardingPage() {
         }
     }
 
+    // Show loading state while checking onboarding status
+    if (isCheckingStatus) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="p-3 rounded-xl bg-linear-to-br from-violet-500 to-purple-600">
+                        <BookOpen className="h-8 w-8 text-white animate-pulse" />
+                    </div>
+                    <p className="text-muted-foreground">Loading...</p>
+                </div>
+            </div>
+        )
+    }
+
     return (
         <div className="min-h-screen bg-background relative overflow-hidden">
             {/* Background Effects */}
@@ -239,7 +306,6 @@ export default function OnboardingPage() {
                     <div className="flex items-start justify-between max-w-3xl mx-auto">
                         {STEPS.map((step, index) => (
                             <div key={step.id} className="flex items-start flex-1 last:flex-initial">
-                                {/* Step Circle and Label */}
                                 <div className="flex flex-col items-center relative">
                                     <div className={`
                                         relative z-10 flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300
@@ -256,16 +322,12 @@ export default function OnboardingPage() {
                                             <step.icon className={`h-5 w-5 ${currentStep === step.id ? "text-violet-500" : "text-muted-foreground"}`} />
                                         )}
                                     </div>
-                                    {/* Step Title - directly under its icon */}
                                     <span className={`text-xs mt-2 hidden md:block text-center w-16 ${currentStep === step.id ? "text-violet-500 font-medium" : "text-muted-foreground"}`}>
                                         {step.title}
                                     </span>
                                 </div>
-                                {/* Connector Line */}
                                 {index < STEPS.length - 1 && (
-                                    <div
-                                        className={`flex-1 h-0.5 mt-5 mx-2 ${currentStep > step.id ? "bg-violet-500" : "bg-border"}`}
-                                    />
+                                    <div className={`flex-1 h-0.5 mt-5 mx-2 ${currentStep > step.id ? "bg-violet-500" : "bg-border"}`} />
                                 )}
                             </div>
                         ))}
@@ -334,9 +396,9 @@ function WelcomeStep() {
             </div>
             <h1 className="text-4xl font-bold mb-4">Welcome to AI Blog! 🎉</h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-lg mx-auto">
-                Let's set up your blog in just a few minutes. We'll guide you through everything you need to start publishing amazing content.
+                Let&apos;s set up your blog in just a few minutes. We&apos;ll guide you through everything you need to start publishing amazing content.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-xl mx-auto">
+            <div className="grid grid-cols-3 gap-4 max-w-md mx-auto">
                 {[
                     { icon: Zap, label: "AI-Powered Writing" },
                     { icon: Layout, label: "Beautiful Themes" },
@@ -353,7 +415,7 @@ function WelcomeStep() {
 }
 
 // Step 2: Blog Details
-function BlogDetailsStep({ formData, setFormData }: { formData: any; setFormData: any }) {
+function BlogDetailsStep({ formData, setFormData }: { formData: FormData; setFormData: React.Dispatch<React.SetStateAction<FormData>> }) {
     return (
         <div className="bg-card/80 backdrop-blur-xl rounded-2xl border border-border/50 p-8">
             <div className="text-center mb-8">
@@ -370,7 +432,7 @@ function BlogDetailsStep({ formData, setFormData }: { formData: any; setFormData
                     <Input
                         placeholder="e.g., Tech Insights, Foodie Adventures, Travel Tales"
                         value={formData.blogName}
-                        onChange={(e) => setFormData((prev: any) => ({ ...prev, blogName: e.target.value }))}
+                        onChange={(e) => setFormData(prev => ({ ...prev, blogName: e.target.value }))}
                         className="h-12 text-lg"
                         maxLength={50}
                     />
@@ -378,11 +440,11 @@ function BlogDetailsStep({ formData, setFormData }: { formData: any; setFormData
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-sm font-medium">Blog Description</label>
+                    <label className="text-sm font-medium">Description</label>
                     <Textarea
                         placeholder="Tell readers what your blog is about..."
                         value={formData.blogDescription}
-                        onChange={(e) => setFormData((prev: any) => ({ ...prev, blogDescription: e.target.value }))}
+                        onChange={(e) => setFormData(prev => ({ ...prev, blogDescription: e.target.value }))}
                         rows={4}
                         maxLength={200}
                     />
@@ -397,7 +459,17 @@ function BlogDetailsStep({ formData, setFormData }: { formData: any; setFormData
 function DomainStep({
     formData, setFormData, domainAvailable, setDomainAvailable,
     isEditingDomain, setIsEditingDomain, checkDomainAvailability, isLoading, generateSubdomain
-}: any) {
+}: {
+    formData: FormData
+    setFormData: React.Dispatch<React.SetStateAction<FormData>>
+    domainAvailable: boolean | null
+    setDomainAvailable: React.Dispatch<React.SetStateAction<boolean | null>>
+    isEditingDomain: boolean
+    setIsEditingDomain: React.Dispatch<React.SetStateAction<boolean>>
+    checkDomainAvailability: () => Promise<void>
+    isLoading: boolean
+    generateSubdomain: (name: string) => string
+}) {
     const fullDomain = `${formData.subdomain}.ai-blog.vercel.app`
 
     return (
@@ -424,7 +496,7 @@ function DomainStep({
                                         value={formData.subdomain}
                                         onChange={(e) => {
                                             const value = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "")
-                                            setFormData((prev: any) => ({ ...prev, subdomain: value }))
+                                            setFormData(prev => ({ ...prev, subdomain: value }))
                                             setDomainAvailable(null)
                                         }}
                                         className="flex-1 bg-transparent outline-none font-medium mx-1"
@@ -464,7 +536,7 @@ function DomainStep({
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                                setFormData((prev: any) => ({ ...prev, subdomain: generateSubdomain(formData.blogName) }))
+                                setFormData(prev => ({ ...prev, subdomain: generateSubdomain(formData.blogName) }))
                                 setDomainAvailable(null)
                                 setIsEditingDomain(false)
                             }}
@@ -496,9 +568,6 @@ function DomainStep({
                 <div className="p-4 rounded-xl bg-linear-to-br from-violet-500/5 to-purple-500/5 border border-violet-500/20">
                     <div className="flex items-center justify-between mb-3">
                         <span className="text-sm font-medium">Preview</span>
-                        <Button variant="ghost" size="sm" className="gap-1 h-7 text-xs">
-                            <Copy className="h-3 w-3" /> Copy URL
-                        </Button>
                     </div>
                     <div className="flex items-center gap-2 p-3 rounded-lg bg-background border">
                         <Globe className="h-4 w-4 text-muted-foreground" />
@@ -510,10 +579,7 @@ function DomainStep({
                 {/* Custom Domain Option */}
                 <div className="pt-4 border-t">
                     <div className="flex items-center justify-between mb-3">
-                        <div>
-                            <p className="font-medium">Have your own domain?</p>
-                            <p className="text-sm text-muted-foreground">You can add a custom domain later in settings</p>
-                        </div>
+                        <span className="text-sm font-medium">Custom Domain</span>
                         <Button variant="outline" size="sm" disabled className="gap-2">
                             <Globe className="h-4 w-4" /> Add Later
                         </Button>
@@ -525,22 +591,22 @@ function DomainStep({
 }
 
 // Step 4: Category
-function CategoryStep({ formData, setFormData }: any) {
+function CategoryStep({ formData, setFormData }: { formData: FormData; setFormData: React.Dispatch<React.SetStateAction<FormData>> }) {
     return (
         <div className="bg-card/80 backdrop-blur-xl rounded-2xl border border-border/50 p-8">
             <div className="text-center mb-8">
                 <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-linear-to-br from-violet-500/10 to-purple-500/10 mb-4">
                     <Tag className="h-7 w-7 text-violet-500" />
                 </div>
-                <h2 className="text-2xl font-bold">What's Your Blog About?</h2>
+                <h2 className="text-2xl font-bold">What&apos;s Your Blog About?</h2>
                 <p className="text-muted-foreground mt-2">Choose a category that best describes your content</p>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
                 {CATEGORIES.map((category) => (
                     <button
                         key={category.id}
-                        onClick={() => setFormData((prev: any) => ({ ...prev, category: category.id }))}
+                        onClick={() => setFormData(prev => ({ ...prev, category: category.id }))}
                         className={`
                             relative p-4 rounded-xl border-2 transition-all duration-200 text-left
                             ${formData.category === category.id
@@ -554,8 +620,8 @@ function CategoryStep({ formData, setFormData }: any) {
                                 <CheckCircle2 className="h-5 w-5 text-violet-500" />
                             </div>
                         )}
-                        <div className="text-2xl mb-2">{category.icon}</div>
-                        <p className="font-medium text-sm">{category.label}</p>
+                        <span className="text-2xl mb-2 block">{category.icon}</span>
+                        <span className="font-medium">{category.label}</span>
                     </button>
                 ))}
             </div>
@@ -564,7 +630,7 @@ function CategoryStep({ formData, setFormData }: any) {
 }
 
 // Step 5: Appearance
-function AppearanceStep({ formData, setFormData }: any) {
+function AppearanceStep({ formData, setFormData }: { formData: FormData; setFormData: React.Dispatch<React.SetStateAction<FormData>> }) {
     return (
         <div className="bg-card/80 backdrop-blur-xl rounded-2xl border border-border/50 p-8">
             <div className="text-center mb-8">
@@ -583,7 +649,7 @@ function AppearanceStep({ formData, setFormData }: any) {
                         {THEMES.map((theme) => (
                             <button
                                 key={theme.id}
-                                onClick={() => setFormData((prev: any) => ({ ...prev, theme: theme.id }))}
+                                onClick={() => setFormData(prev => ({ ...prev, theme: theme.id }))}
                                 className={`
                                     relative p-4 rounded-xl border-2 transition-all duration-200
                                     ${formData.theme === theme.id
@@ -607,11 +673,11 @@ function AppearanceStep({ formData, setFormData }: any) {
                 {/* Color Scheme */}
                 <div className="space-y-3">
                     <label className="text-sm font-medium">Accent Color</label>
-                    <div className="flex gap-3 flex-wrap">
+                    <div className="flex items-center gap-3">
                         {COLOR_SCHEMES.map((scheme) => (
                             <button
                                 key={scheme.id}
-                                onClick={() => setFormData((prev: any) => ({ ...prev, colorScheme: scheme.id }))}
+                                onClick={() => setFormData(prev => ({ ...prev, colorScheme: scheme.id }))}
                                 className={`
                                     relative w-12 h-12 rounded-xl ${scheme.color} transition-all duration-200
                                     ${formData.colorScheme === scheme.id
@@ -634,7 +700,7 @@ function AppearanceStep({ formData, setFormData }: any) {
 }
 
 // Step 6: Profile
-function ProfileStep({ formData, setFormData }: any) {
+function ProfileStep({ formData, setFormData }: { formData: FormData; setFormData: React.Dispatch<React.SetStateAction<FormData>> }) {
     return (
         <div className="bg-card/80 backdrop-blur-xl rounded-2xl border border-border/50 p-8">
             <div className="text-center mb-8">
@@ -642,18 +708,18 @@ function ProfileStep({ formData, setFormData }: any) {
                     <User className="h-7 w-7 text-violet-500" />
                 </div>
                 <h2 className="text-2xl font-bold">Set Up Your Profile</h2>
-                <p className="text-muted-foreground mt-2">Let readers know who you are</p>
+                <p className="text-muted-foreground mt-2">Tell readers about yourself</p>
             </div>
 
             <div className="space-y-6">
-                {/* Profile Image */}
+                {/* Avatar Preview */}
                 <div className="flex justify-center">
                     <div className="relative">
                         <div className="w-24 h-24 rounded-full bg-linear-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold">
                             {formData.displayName ? formData.displayName[0].toUpperCase() : "?"}
                         </div>
-                        <button className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-background border-2 border-border flex items-center justify-center hover:bg-muted transition-colors">
-                            <Image className="h-4 w-4" />
+                        <button className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-background border-2 border-border flex items-center justify-center hover:bg-muted transition-colors" aria-label="Upload profile image">
+                            <ImageIcon className="h-4 w-4" />
                         </button>
                     </div>
                 </div>
@@ -663,7 +729,7 @@ function ProfileStep({ formData, setFormData }: any) {
                     <Input
                         placeholder="How should readers see you?"
                         value={formData.displayName}
-                        onChange={(e) => setFormData((prev: any) => ({ ...prev, displayName: e.target.value }))}
+                        onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
                         className="h-12"
                     />
                 </div>
@@ -673,7 +739,7 @@ function ProfileStep({ formData, setFormData }: any) {
                     <Textarea
                         placeholder="Tell readers a bit about yourself..."
                         value={formData.bio}
-                        onChange={(e) => setFormData((prev: any) => ({ ...prev, bio: e.target.value }))}
+                        onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
                         rows={3}
                         maxLength={160}
                     />
@@ -686,7 +752,7 @@ function ProfileStep({ formData, setFormData }: any) {
                         <label className="text-sm font-medium flex items-center gap-2">
                             <Clock className="h-4 w-4" /> Timezone
                         </label>
-                        <div className="h-10 px-3 rounded-md bg-muted/50 border flex items-center text-sm">
+                        <div className="h-10 px-3 rounded-md bg-muted/50 border text-sm flex items-center">
                             {formData.timezone}
                         </div>
                     </div>
@@ -696,7 +762,7 @@ function ProfileStep({ formData, setFormData }: any) {
                         </label>
                         <select
                             value={formData.language}
-                            onChange={(e) => setFormData((prev: any) => ({ ...prev, language: e.target.value }))}
+                            onChange={(e) => setFormData(prev => ({ ...prev, language: e.target.value }))}
                             className="w-full h-10 px-3 rounded-md bg-muted/50 border text-sm"
                         >
                             <option value="en">English</option>
@@ -713,7 +779,7 @@ function ProfileStep({ formData, setFormData }: any) {
 }
 
 // Step 7: Launch
-function LaunchStep({ formData }: any) {
+function LaunchStep({ formData }: { formData: FormData }) {
     const fullDomain = `${formData.subdomain}.ai-blog.vercel.app`
     const category = CATEGORIES.find(c => c.id === formData.category)
 
@@ -724,7 +790,7 @@ function LaunchStep({ formData }: any) {
                     <Rocket className="h-10 w-10 text-white" />
                 </div>
                 <h2 className="text-3xl font-bold mb-2">Ready to Launch! 🚀</h2>
-                <p className="text-muted-foreground">Here's a summary of your new blog</p>
+                <p className="text-muted-foreground">Here&apos;s a summary of your new blog</p>
             </div>
 
             <div className="space-y-4">
@@ -766,7 +832,7 @@ function LaunchStep({ formData }: any) {
                 {/* What's Next */}
                 <div className="mt-6 p-4 rounded-xl bg-linear-to-br from-violet-500/10 to-purple-500/10 border border-violet-500/20">
                     <h3 className="font-semibold mb-3 flex items-center gap-2">
-                        <Sparkles className="h-4 w-4 text-violet-500" /> What's Next?
+                        <Sparkles className="h-4 w-4 text-violet-500" /> What&apos;s Next?
                     </h3>
                     <ul className="space-y-2 text-sm text-muted-foreground">
                         <li className="flex items-center gap-2">
@@ -775,7 +841,7 @@ function LaunchStep({ formData }: any) {
                         </li>
                         <li className="flex items-center gap-2">
                             <CheckCircle2 className="h-4 w-4 text-green-500" />
-                            Customize your blog's appearance
+                            Customize your blog&apos;s appearance
                         </li>
                         <li className="flex items-center gap-2">
                             <CheckCircle2 className="h-4 w-4 text-green-500" />

@@ -169,6 +169,7 @@ cd frontend && npm run dev
 | `DATABASE_URL` | ✅ | PostgreSQL connection string |
 | `REDIS_URL` | ✅ | Redis connection string |
 | `FRONTEND_URL` | ✅ | Frontend URL (for CORS) |
+| `NEXTAUTH_SECRET` | ✅ | **Must match frontend secret** for JWT verification |
 | `GROQ_API_KEY` | ✅ | Groq API key for AI |
 | `HF_API_TOKEN` | ✅ | HuggingFace API token |
 | `CLOUDINARY_CLOUD_NAME` | ❌ | Cloudinary cloud name |
@@ -177,6 +178,8 @@ cd frontend && npm run dev
 | `NODE_ENV` | ✅ | `production` |
 
 </details>
+
+> ⚠️ **Critical**: The `NEXTAUTH_SECRET` must be **exactly the same** in both frontend (Vercel) and backend (Render) for authentication to work. This secret is used to sign JWTs in the frontend and verify them in the backend.
 
 ---
 

@@ -42,13 +42,22 @@ function LoginForm() {
 
             if (result?.error) {
                 setError("Invalid email or password")
-            } else {
-                // Check if user has completed onboarding
-                const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
-                try {
-                    const res = await fetch(`${API_URL}/blog/status`, {
-                        credentials: 'include',
-                    })
+                setIsLoading(false)
+                return
+            }
+            
+            // After successful signIn, get the session to retrieve userId
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+            
+            try {
+                // Fetch the session from NextAuth to get the user ID
+                const sessionRes = await fetch('/api/auth/session')
+                const session = await sessionRes.json()
+                const userId = session?.user?.id
+                
+                if (userId) {
+                    // Check if user has completed onboarding
+                    const res = await fetch(`${API_URL}/blog/status?userId=${userId}`)
                     const data = await res.json()
 
                     if (data.hasCompletedOnboarding) {
@@ -56,13 +65,16 @@ function LoginForm() {
                     } else {
                         router.push("/onboarding")
                     }
-                } catch {
-                    // If check fails, default to dashboard (onboarding can handle redirects)
-                    router.push("/dashboard")
+                } else {
+                    // No userId available, default to onboarding
+                    router.push("/onboarding")
                 }
-                router.refresh()
+            } catch {
+                // If check fails, default to dashboard (onboarding can handle redirects)
+                router.push("/dashboard")
             }
-        } catch (err) {
+            router.refresh()
+        } catch {
             setError("An error occurred. Please try again.")
         } finally {
             setIsLoading(false)

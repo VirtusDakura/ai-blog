@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, Suspense } from "react"
+import { useState, Suspense, useEffect } from "react"
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { usePosts } from "@/hooks/use-api"
 import { useBlog, getBlogUrl, getDisplayDomain } from "@/contexts/blog-context"
 import { Button } from "@/components/ui/button"
@@ -78,6 +78,7 @@ function formatDate(dateString: string) {
 }
 
 function DashboardContent() {
+    const router = useRouter()
     const searchParams = useSearchParams()
     const isWelcome = searchParams.get("welcome") === "true"
     const [showWelcome, setShowWelcome] = useState(isWelcome)
@@ -87,6 +88,13 @@ function DashboardContent() {
     // Use the blog context for real data
     const blog = useBlog()
     const { data, isLoading } = usePosts({ take: 5 })
+
+    // Redirect to onboarding if user hasn't completed it
+    useEffect(() => {
+        if (!blog.isLoading && !blog.hasCompletedOnboarding) {
+            router.push('/onboarding')
+        }
+    }, [blog.isLoading, blog.hasCompletedOnboarding, router])
 
     const totalPosts = data?.meta.total || 0
     const publishedPosts = data?.data.filter(p => p.isPublished).length || 0
