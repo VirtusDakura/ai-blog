@@ -1,8 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Session type casting is needed for next-auth custom properties */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
+import { useCallback } from 'react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+
+// Hook to get the current token - using callback to always get fresh value
+function useGetToken() {
+    const { data: session, status } = useSession();
+    
+    const getToken = useCallback(() => {
+        if (status === 'loading') return undefined;
+        return (session as any)?.accessToken as string | undefined;
+    }, [session, status]);
+    
+    return { getToken, isLoading: status === 'loading', isAuthenticated: status === 'authenticated' };
+}
 
 export interface Post {
     id: string;
@@ -84,6 +97,17 @@ async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise
     return res.json();
 }
 
+// Helper to create authenticated fetch
+async function fetchWithAuth<T>(endpoint: string, token: string | undefined, options: RequestInit = {}): Promise<T> {
+    return fetchAPI<T>(endpoint, {
+        ...options,
+        headers: {
+            ...options.headers,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+    });
+}
+
 // Cache configuration
 const CACHE_TIME = {
     posts: 5 * 60 * 1000, // 5 minutes
@@ -134,16 +158,19 @@ export function usePostBySlug(slug: string) {
 // Hook to create a post
 export function useCreatePost() {
     const queryClient = useQueryClient();
-    const { data: session } = useSession();
-    const token = (session as any)?.accessToken;
+    const { getToken } = useGetToken();
 
     return useMutation({
-        mutationFn: (data: CreatePostInput) =>
-            fetchAPI<Post>('/posts', {
+        mutationFn: (data: CreatePostInput) => {
+            const token = getToken();
+            if (!token) {
+                return Promise.reject(new Error('Not authenticated. Please log in.'));
+            }
+            return fetchWithAuth<Post>('/posts', token, {
                 method: 'POST',
                 body: JSON.stringify(data),
-                headers: token ? { Authorization: `Bearer ${token}` } : {}
-            }),
+            });
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['posts'] });
         },
@@ -153,16 +180,19 @@ export function useCreatePost() {
 // Hook to update a post
 export function useUpdatePost() {
     const queryClient = useQueryClient();
-    const { data: session } = useSession();
-    const token = (session as any)?.accessToken;
+    const { getToken } = useGetToken();
 
     return useMutation({
-        mutationFn: ({ id, data }: { id: string; data: UpdatePostInput }) =>
-            fetchAPI<Post>(`/posts/${id}`, {
+        mutationFn: ({ id, data }: { id: string; data: UpdatePostInput }) => {
+            const token = getToken();
+            if (!token) {
+                return Promise.reject(new Error('Not authenticated. Please log in.'));
+            }
+            return fetchWithAuth<Post>(`/posts/${id}`, token, {
                 method: 'PATCH',
                 body: JSON.stringify(data),
-                headers: token ? { Authorization: `Bearer ${token}` } : {}
-            }),
+            });
+        },
         onSuccess: (_, { id }) => {
             queryClient.invalidateQueries({ queryKey: ['posts'] });
             queryClient.invalidateQueries({ queryKey: ['posts', id] });
@@ -173,15 +203,18 @@ export function useUpdatePost() {
 // Hook to publish a post
 export function usePublishPost() {
     const queryClient = useQueryClient();
-    const { data: session } = useSession();
-    const token = (session as any)?.accessToken;
+    const { getToken } = useGetToken();
 
     return useMutation({
-        mutationFn: (id: string) =>
-            fetchAPI<Post>(`/posts/${id}/publish`, {
+        mutationFn: (id: string) => {
+            const token = getToken();
+            if (!token) {
+                return Promise.reject(new Error('Not authenticated. Please log in.'));
+            }
+            return fetchWithAuth<Post>(`/posts/${id}/publish`, token, {
                 method: 'POST',
-                headers: token ? { Authorization: `Bearer ${token}` } : {}
-            }),
+            });
+        },
         onSuccess: (_, id) => {
             queryClient.invalidateQueries({ queryKey: ['posts'] });
             queryClient.invalidateQueries({ queryKey: ['posts', id] });
@@ -192,15 +225,18 @@ export function usePublishPost() {
 // Hook to unpublish a post
 export function useUnpublishPost() {
     const queryClient = useQueryClient();
-    const { data: session } = useSession();
-    const token = (session as any)?.accessToken;
+    const { getToken } = useGetToken();
 
     return useMutation({
-        mutationFn: (id: string) =>
-            fetchAPI<Post>(`/posts/${id}/unpublish`, {
+        mutationFn: (id: string) => {
+            const token = getToken();
+            if (!token) {
+                return Promise.reject(new Error('Not authenticated. Please log in.'));
+            }
+            return fetchWithAuth<Post>(`/posts/${id}/unpublish`, token, {
                 method: 'POST',
-                headers: token ? { Authorization: `Bearer ${token}` } : {}
-            }),
+            });
+        },
         onSuccess: (_, id) => {
             queryClient.invalidateQueries({ queryKey: ['posts'] });
             queryClient.invalidateQueries({ queryKey: ['posts', id] });
@@ -211,15 +247,18 @@ export function useUnpublishPost() {
 // Hook to delete a post
 export function useDeletePost() {
     const queryClient = useQueryClient();
-    const { data: session } = useSession();
-    const token = (session as any)?.accessToken;
+    const { getToken } = useGetToken();
 
     return useMutation({
-        mutationFn: (id: string) =>
-            fetchAPI<void>(`/posts/${id}`, {
+        mutationFn: (id: string) => {
+            const token = getToken();
+            if (!token) {
+                return Promise.reject(new Error('Not authenticated. Please log in.'));
+            }
+            return fetchWithAuth<void>(`/posts/${id}`, token, {
                 method: 'DELETE',
-                headers: token ? { Authorization: `Bearer ${token}` } : {}
-            }),
+            });
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['posts'] });
         },
@@ -230,61 +269,61 @@ export function useDeletePost() {
 
 // Hook to generate post content with AI
 export function useGeneratePost() {
-    const { data: session } = useSession();
-    const token = (session as any)?.accessToken;
+    const { getToken } = useGetToken();
 
     return useMutation({
-        mutationFn: (data: GeneratePostInput) =>
-            fetchAPI<GeneratePostResponse>('/ai/generate', {
+        mutationFn: (data: GeneratePostInput) => {
+            const token = getToken();
+            return fetchWithAuth<GeneratePostResponse>('/ai/generate', token, {
                 method: 'POST',
                 body: JSON.stringify(data),
-                headers: token ? { Authorization: `Bearer ${token}` } : {}
-            }),
+            });
+        },
     });
 }
 
 // Hook to generate SEO metadata
 export function useGenerateSeo() {
-    const { data: session } = useSession();
-    const token = (session as any)?.accessToken;
+    const { getToken } = useGetToken();
 
     return useMutation({
-        mutationFn: (content: string) =>
-            fetchAPI<SeoMetadata>('/ai/seo', {
+        mutationFn: (content: string) => {
+            const token = getToken();
+            return fetchWithAuth<SeoMetadata>('/ai/seo', token, {
                 method: 'POST',
                 body: JSON.stringify({ content }),
-                headers: token ? { Authorization: `Bearer ${token}` } : {}
-            }),
+            });
+        },
     });
 }
 
 // Hook to generate tags
 export function useGenerateTags() {
-    const { data: session } = useSession();
-    const token = (session as any)?.accessToken;
+    const { getToken } = useGetToken();
 
     return useMutation({
-        mutationFn: (content: string) =>
-            fetchAPI<{ tags: string[] }>('/ai/tags', {
+        mutationFn: (content: string) => {
+            const token = getToken();
+            return fetchWithAuth<{ tags: string[] }>('/ai/tags', token, {
                 method: 'POST',
                 body: JSON.stringify({ content }),
-                headers: token ? { Authorization: `Bearer ${token}` } : {}
-            }),
+            });
+        },
     });
 }
 
 // Hook to queue AI article generation
 export function useQueueArticleGeneration() {
-    const { data: session } = useSession();
-    const token = (session as any)?.accessToken;
+    const { getToken } = useGetToken();
 
     return useMutation({
-        mutationFn: (data: GeneratePostInput) =>
-            fetchAPI<{ jobId: string; queue: string }>('/ai/queue/generate', {
+        mutationFn: (data: GeneratePostInput) => {
+            const token = getToken();
+            return fetchWithAuth<{ jobId: string; queue: string }>('/ai/queue/generate', token, {
                 method: 'POST',
                 body: JSON.stringify(data),
-                headers: token ? { Authorization: `Bearer ${token}` } : {}
-            }),
+            });
+        },
     });
 }
 
@@ -376,16 +415,16 @@ export function useComments(postId: string) {
 // Hook to create a comment
 export function useCreateComment() {
     const queryClient = useQueryClient();
-    const { data: session } = useSession();
-    const token = (session as any)?.accessToken;
+    const { getToken } = useGetToken();
 
     return useMutation({
-        mutationFn: (data: CreateCommentInput) =>
-            fetchAPI<Comment>('/comments', {
+        mutationFn: (data: CreateCommentInput) => {
+            const token = getToken();
+            return fetchWithAuth<Comment>('/comments', token, {
                 method: 'POST',
                 body: JSON.stringify(data),
-                headers: token ? { Authorization: `Bearer ${token}` } : {}
-            }),
+            });
+        },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['comments', variables.postId] });
         },
@@ -395,16 +434,16 @@ export function useCreateComment() {
 // Hook to update a comment
 export function useUpdateComment() {
     const queryClient = useQueryClient();
-    const { data: session } = useSession();
-    const token = (session as any)?.accessToken;
+    const { getToken } = useGetToken();
 
     return useMutation({
-        mutationFn: ({ id, content }: { id: string; content: string; postId: string }) =>
-            fetchAPI<Comment>(`/comments/${id}`, {
+        mutationFn: ({ id, content }: { id: string; content: string; postId: string }) => {
+            const token = getToken();
+            return fetchWithAuth<Comment>(`/comments/${id}`, token, {
                 method: 'PATCH',
                 body: JSON.stringify({ content }),
-                headers: token ? { Authorization: `Bearer ${token}` } : {}
-            }),
+            });
+        },
         onSuccess: (_, { postId }) => {
             queryClient.invalidateQueries({ queryKey: ['comments', postId] });
         },
@@ -414,15 +453,15 @@ export function useUpdateComment() {
 // Hook to delete a comment
 export function useDeleteComment() {
     const queryClient = useQueryClient();
-    const { data: session } = useSession();
-    const token = (session as any)?.accessToken;
+    const { getToken } = useGetToken();
 
     return useMutation({
-        mutationFn: ({ id }: { id: string; postId: string }) =>
-            fetchAPI<void>(`/comments/${id}`, {
+        mutationFn: ({ id }: { id: string; postId: string }) => {
+            const token = getToken();
+            return fetchWithAuth<void>(`/comments/${id}`, token, {
                 method: 'DELETE',
-                headers: token ? { Authorization: `Bearer ${token}` } : {}
-            }),
+            });
+        },
         onSuccess: (_, { postId }) => {
             queryClient.invalidateQueries({ queryKey: ['comments', postId] });
         },
