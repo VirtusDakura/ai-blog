@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
-import { Request } from 'express';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import * as jwt from 'jsonwebtoken';
 
@@ -14,10 +13,6 @@ export interface JwtPayload {
   sub?: string;
   email?: string;
   [key: string]: unknown;
-}
-
-interface RequestWithUser extends Request {
-  user?: JwtPayload;
 }
 
 @Injectable()
@@ -37,8 +32,11 @@ export class JwtAuthGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest<RequestWithUser>();
-    const authHeader: string | undefined = request.headers.authorization;
+    const request = context.switchToHttp().getRequest<{
+      headers: { authorization?: string };
+      user?: JwtPayload;
+    }>();
+    const authHeader = request.headers.authorization;
 
     if (!authHeader) {
       throw new UnauthorizedException('No authorization header provided');
