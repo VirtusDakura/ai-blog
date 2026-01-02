@@ -78,7 +78,8 @@ providers.push(
 );
 
 export const authOptions: AuthOptions = {
-    adapter: PrismaAdapter(prisma) as any,
+    // Only use adapter for OAuth providers, not for credentials
+    // adapter: PrismaAdapter(prisma) as any,
     providers,
     session: {
         strategy: "jwt",

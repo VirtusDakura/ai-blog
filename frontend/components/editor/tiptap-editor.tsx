@@ -5,7 +5,6 @@ import { useEditor, EditorContent } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import Image from "@tiptap/extension-image"
 import Placeholder from "@tiptap/extension-placeholder"
-import Link from "@tiptap/extension-link"
 import { EditorToolbar } from "./toolbar"
 import { useGeneratePost } from "@/hooks/use-api"
 import { useToast } from "@/hooks/use-toast"
@@ -27,22 +26,23 @@ export function TiptapEditor({ content, onChange }: TiptapEditorProps) {
     const { toast } = useToast()
 
     // Memoize extensions to prevent recreation on each render
+    // Note: StarterKit already includes Link extension, so we configure it there
     const extensions = useMemo(() => [
         StarterKit.configure({
             heading: {
                 levels: [1, 2, 3],
+            },
+            link: {
+                openOnClick: false,
+                HTMLAttributes: {
+                    class: "text-primary underline",
+                },
             },
         }),
         Placeholder.configure({
             placeholder: "Write something amazing...",
         }),
         Image,
-        Link.configure({
-            openOnClick: false,
-            HTMLAttributes: {
-                class: "text-primary underline",
-            },
-        }),
     ], [])
 
     const editor = useEditor({
