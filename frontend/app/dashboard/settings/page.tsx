@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { useBlog } from "@/contexts/blog-context"
+import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -11,16 +12,19 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
-    Settings, Globe, User, Shield, Bell, Trash2, Save, Check, AlertCircle,
-    Mail, Lock, Eye, EyeOff, RefreshCw, Download, Upload, Code, Rss
+    Settings, User, Shield, Bell, Trash2, Save, Check,
+    Lock, RefreshCw, Download, Upload, Code, Rss, AlertTriangle
 } from "lucide-react"
 
 export default function SettingsPage() {
     const { data: session } = useSession()
     const blog = useBlog()
+    const { toast } = useToast()
     const [isLoading, setIsLoading] = useState(false)
     const [saveSuccess, setSaveSuccess] = useState(false)
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
     // General Settings
     const [generalSettings, setGeneralSettings] = useState({
@@ -82,7 +86,7 @@ export default function SettingsPage() {
         setIsLoading(true)
         try {
             const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
-            const userId = (session?.user as any)?.id
+            const userId = (session?.user as { id?: string })?.id
 
             const res = await fetch(`${API_URL}/blog/setup`, {
                 method: "POST",
@@ -99,10 +103,14 @@ export default function SettingsPage() {
             if (res.ok) {
                 setSaveSuccess(true)
                 blog.refetch()
+                toast({ title: "Settings saved!", description: "Your settings have been updated successfully.", variant: "success" })
                 setTimeout(() => setSaveSuccess(false), 3000)
+            } else {
+                toast({ title: "Save failed", description: "Failed to save settings. Please try again.", variant: "error" })
             }
         } catch (error) {
             console.error("Failed to save settings:", error)
+            toast({ title: "Error", description: "An error occurred while saving settings.", variant: "error" })
         } finally {
             setIsLoading(false)
         }
@@ -265,7 +273,7 @@ export default function SettingsPage() {
                                     placeholder="blog.yourdomain.com"
                                 />
                                 <p className="text-sm text-muted-foreground">
-                                    Point your domain's CNAME record to <code className="px-1 py-0.5 rounded bg-muted">cname.ai-blog.vercel.app</code>
+                                    Point your domain&apos;s CNAME record to <code className="px-1 py-0.5 rounded bg-muted">cname.ai-blog.vercel.app</code>
                                 </p>
                             </div>
                         </CardContent>
@@ -283,7 +291,7 @@ export default function SettingsPage() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="flex items-center gap-6">
-                                <div className="h-20 w-20 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold">
+                                <div className="h-20 w-20 rounded-full bg-linear-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold">
                                     {profileSettings.displayName?.charAt(0) || "U"}
                                 </div>
                                 <div className="flex-1">
@@ -598,7 +606,7 @@ export default function SettingsPage() {
                                         Permanently delete your blog and all content
                                     </p>
                                 </div>
-                                <Button variant="destructive" size="sm">
+                                <Button variant="destructive" size="sm" onClick={() => setShowDeleteDialog(true)}>
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     Delete Blog
                                 </Button>
@@ -607,6 +615,35 @@ export default function SettingsPage() {
                     </Card>
                 </TabsContent>
             </Tabs>
+
+            {/* Delete Blog Confirmation Dialog */}
+            <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-red-500">
+                            <AlertTriangle className="h-5 w-5" />
+                            Delete Blog
+                        </DialogTitle>
+                        <DialogDescription>
+                            This action cannot be undone. This will permanently delete your blog and remove all of your posts, comments, and subscriber data.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+                            Cancel
+                        </Button>
+                        <Button 
+                            variant="destructive" 
+                            onClick={() => {
+                                toast({ title: "Feature coming soon", description: "Blog deletion is not yet implemented.", variant: "warning" })
+                                setShowDeleteDialog(false)
+                            }}
+                        >
+                            Delete Blog
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

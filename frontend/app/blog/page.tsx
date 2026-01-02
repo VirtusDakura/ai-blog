@@ -10,7 +10,7 @@ import { useState } from "react"
 function PostCardSkeleton() {
     return (
         <article className="group">
-            <Skeleton className="aspect-[16/10] rounded-2xl mb-4" />
+            <Skeleton className="aspect-16/10 rounded-2xl mb-4" />
             <Skeleton className="h-4 w-20 mb-3" />
             <Skeleton className="h-7 w-full mb-2" />
             <Skeleton className="h-7 w-3/4 mb-3" />
@@ -54,14 +54,14 @@ export default function BlogHomePage() {
     const recentPosts = data?.data.slice(1, 7) || []
 
     return (
-        <div className="min-h-screen bg-background font-[family-name:var(--font-inter)]">
+        <div className="min-h-screen bg-background font-inter">
             {/* Navigation - Clean and minimal */}
             <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-xl border-b border-border/40">
                 <div className="max-w-6xl mx-auto px-4 sm:px-6">
                     <div className="flex h-16 items-center justify-between">
                         {/* Logo */}
                         <Link href="/blog" className="flex items-center gap-2.5 group">
-                            <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-500/20 group-hover:shadow-violet-500/30 transition-shadow">
+                            <div className="p-2 rounded-xl bg-linear-to-br from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-500/20 group-hover:shadow-violet-500/30 transition-shadow">
                                 <BookOpen className="h-5 w-5" />
                             </div>
                             <span className="font-bold text-xl tracking-tight">The Blog</span>
@@ -121,7 +121,7 @@ export default function BlogHomePage() {
                         <div className="max-w-3xl">
                             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-6">
                                 Ideas, stories, and
-                                <span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent"> insights</span>
+                                <span className="bg-linear-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent"> insights</span>
                             </h1>
                             <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-2xl">
                                 Discover thoughtful articles on technology, design, and the future.
@@ -137,7 +137,7 @@ export default function BlogHomePage() {
                         <div className="max-w-6xl mx-auto px-4 sm:px-6">
                             <Link href={`/blog/${featuredPost.slug}`} className="group block">
                                 <article className="grid md:grid-cols-2 gap-8 items-center">
-                                    <div className="relative aspect-[16/10] rounded-2xl overflow-hidden bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-900/20 dark:to-purple-900/20">
+                                    <div className="relative aspect-16/10 rounded-2xl overflow-hidden bg-linear-to-br from-violet-100 to-purple-100 dark:from-violet-900/20 dark:to-purple-900/20">
                                         {featuredPost.coverImage ? (
                                             <Image
                                                 src={featuredPost.coverImage}
@@ -167,7 +167,7 @@ export default function BlogHomePage() {
                                         )}
                                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                             <div className="flex items-center gap-2">
-                                                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-xs font-medium">
+                                                <div className="h-8 w-8 rounded-full bg-linear-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-xs font-medium">
                                                     {getInitials(featuredPost.author?.firstName, featuredPost.author?.lastName, featuredPost.author?.email)}
                                                 </div>
                                                 <span className="font-medium text-foreground">
@@ -230,7 +230,7 @@ export default function BlogHomePage() {
                                 {recentPosts.map((post) => (
                                     <Link key={post.id} href={`/blog/${post.slug}`} className="group">
                                         <article>
-                                            <div className="relative aspect-[16/10] rounded-2xl overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 mb-4">
+                                            <div className="relative aspect-16/10 rounded-2xl overflow-hidden bg-linear-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 mb-4">
                                                 {post.coverImage ? (
                                                     <Image
                                                         src={post.coverImage}
@@ -280,7 +280,7 @@ export default function BlogHomePage() {
                 </section>
 
                 {/* Newsletter / About Section */}
-                <section id="about" className="py-16 sm:py-24 bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/20 border-t border-border/40">
+                <section id="about" className="py-16 sm:py-24 bg-linear-to-br from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/20 border-t border-border/40">
                     <div className="max-w-6xl mx-auto px-4 sm:px-6">
                         <div className="max-w-2xl mx-auto text-center">
                             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-4">
@@ -293,7 +293,7 @@ export default function BlogHomePage() {
                             <div className="flex flex-col sm:flex-row gap-4 justify-center">
                                 <Link
                                     href="/blog"
-                                    className="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:from-violet-700 hover:to-purple-700 shadow-lg shadow-violet-500/20 transition-all"
+                                    className="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium rounded-xl bg-linear-to-r from-violet-600 to-purple-600 text-white hover:from-violet-700 hover:to-purple-700 shadow-lg shadow-violet-500/20 transition-all"
                                 >
                                     <BookOpen className="h-4 w-4" />
                                     Browse All Articles
@@ -309,7 +309,7 @@ export default function BlogHomePage() {
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                         <div className="flex items-center gap-2.5">
-                            <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white">
+                            <div className="p-2 rounded-xl bg-linear-to-br from-violet-500 to-purple-600 text-white">
                                 <BookOpen className="h-4 w-4" />
                             </div>
                             <span className="font-semibold">The Blog</span>

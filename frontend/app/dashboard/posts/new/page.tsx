@@ -10,9 +10,11 @@ import ImageUpload from "@/components/ui/image-upload"
 import { ArrowLeft, Wand2, Loader2, Save } from "lucide-react"
 import Link from "next/link"
 import { useAI, useCreatePost, usePublishPost } from "@/hooks/use-api"
+import { useToast } from "@/hooks/use-toast"
 
 export default function NewPostPage() {
     const router = useRouter()
+    const { toast } = useToast()
     const [title, setTitle] = useState("")
     const [coverImage, setCoverImage] = useState("")
     const [content, setContent] = useState("")
@@ -27,22 +29,23 @@ export default function NewPostPage() {
 
     const handleGenerate = async () => {
         if (!title) {
-            alert("Please enter a title first")
+            toast({ title: "Title required", description: "Please enter a title first", variant: "warning" })
             return
         }
 
         try {
             const data = await generateArticle.mutateAsync({ topic: title })
             setContent(data.content)
+            toast({ title: "Content generated", description: "AI has generated content for your post", variant: "success" })
         } catch (error) {
             console.error(error)
-            alert("Failed to generate content. Please try again.")
+            toast({ title: "Generation failed", description: "Failed to generate content. Please try again.", variant: "error" })
         }
     }
 
     const handleSaveDraft = async () => {
         if (!title) {
-            alert("Please enter a title")
+            toast({ title: "Title required", description: "Please enter a title", variant: "warning" })
             return
         }
 
@@ -52,17 +55,17 @@ export default function NewPostPage() {
                 content,
                 coverImage: coverImage || undefined,
             })
-            alert("Draft saved successfully!")
-            router.push("/dashboard")
+            toast({ title: "Draft saved", description: "Your draft has been saved successfully!", variant: "success" })
+            router.push("/dashboard/posts")
         } catch (error) {
             console.error(error)
-            alert("Failed to save draft. Please try again.")
+            toast({ title: "Save failed", description: "Failed to save draft. Please try again.", variant: "error" })
         }
     }
 
     const handlePublish = async () => {
         if (!title) {
-            alert("Please enter a title")
+            toast({ title: "Title required", description: "Please enter a title", variant: "warning" })
             return
         }
 
@@ -73,11 +76,11 @@ export default function NewPostPage() {
                 coverImage: coverImage || undefined,
             })
             await publishPost.mutateAsync(post.id)
-            alert("Post published successfully!")
-            router.push("/dashboard")
+            toast({ title: "Published!", description: "Your post has been published successfully!", variant: "success" })
+            router.push("/dashboard/posts")
         } catch (error) {
             console.error(error)
-            alert("Failed to publish. Please try again.")
+            toast({ title: "Publish failed", description: "Failed to publish. Please try again.", variant: "error" })
         }
     }
 

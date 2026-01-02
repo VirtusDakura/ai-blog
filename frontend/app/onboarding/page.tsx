@@ -41,9 +41,9 @@ const CATEGORIES = [
 // Theme options
 const THEMES = [
     { id: "minimal", label: "Minimal", preview: "bg-white dark:bg-zinc-900", accent: "violet" },
-    { id: "modern", label: "Modern", preview: "bg-gradient-to-br from-slate-50 to-slate-100", accent: "blue" },
-    { id: "bold", label: "Bold", preview: "bg-gradient-to-br from-violet-600 to-purple-700", accent: "white" },
-    { id: "elegant", label: "Elegant", preview: "bg-gradient-to-br from-amber-50 to-orange-50", accent: "amber" },
+    { id: "modern", label: "Modern", preview: "bg-linear-to-br from-slate-50 to-slate-100", accent: "blue" },
+    { id: "bold", label: "Bold", preview: "bg-linear-to-br from-violet-600 to-purple-700", accent: "white" },
+    { id: "elegant", label: "Elegant", preview: "bg-linear-to-br from-amber-50 to-orange-50", accent: "amber" },
 ]
 
 // Color schemes
@@ -216,7 +216,7 @@ export default function OnboardingPage() {
     return (
         <div className="min-h-screen bg-background relative overflow-hidden">
             {/* Background Effects */}
-            <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-purple-500/5" />
+            <div className="absolute inset-0 bg-linear-to-br from-violet-500/5 via-transparent to-purple-500/5" />
             <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl" />
             <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl" />
 
@@ -224,7 +224,7 @@ export default function OnboardingPage() {
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600">
+                        <div className="p-2 rounded-xl bg-linear-to-br from-violet-500 to-purple-600">
                             <BookOpen className="h-6 w-6 text-white" />
                         </div>
                         <span className="font-bold text-xl">AI Blog</span>
@@ -244,7 +244,7 @@ export default function OnboardingPage() {
                                     <div className={`
                                         relative z-10 flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-300
                                         ${currentStep > step.id
-                                            ? "bg-gradient-to-br from-violet-500 to-purple-600 border-violet-500"
+                                            ? "bg-linear-to-br from-violet-500 to-purple-600 border-violet-500"
                                             : currentStep === step.id
                                                 ? "border-violet-500 bg-violet-500/10"
                                                 : "border-border bg-background"
@@ -301,7 +301,7 @@ export default function OnboardingPage() {
                             <Button
                                 onClick={handleNext}
                                 disabled={!canProceed()}
-                                className="gap-2 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700"
+                                className="gap-2 bg-linear-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700"
                             >
                                 Continue <ArrowRight className="h-4 w-4" />
                             </Button>
@@ -309,7 +309,7 @@ export default function OnboardingPage() {
                             <Button
                                 onClick={handleComplete}
                                 disabled={isLoading}
-                                className="gap-2 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700"
+                                className="gap-2 bg-linear-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700"
                             >
                                 {isLoading ? (
                                     <>Launching...</>
@@ -329,7 +329,7 @@ export default function OnboardingPage() {
 function WelcomeStep() {
     return (
         <div className="text-center">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 mb-6">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-linear-to-br from-violet-500 to-purple-600 mb-6">
                 <Sparkles className="h-10 w-10 text-white" />
             </div>
             <h1 className="text-4xl font-bold mb-4">Welcome to AI Blog! 🎉</h1>
@@ -357,7 +357,7 @@ function BlogDetailsStep({ formData, setFormData }: { formData: any; setFormData
     return (
         <div className="bg-card/80 backdrop-blur-xl rounded-2xl border border-border/50 p-8">
             <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 mb-4">
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-linear-to-br from-violet-500/10 to-purple-500/10 mb-4">
                     <PenTool className="h-7 w-7 text-violet-500" />
                 </div>
                 <h2 className="text-2xl font-bold">Name Your Blog</h2>
@@ -403,7 +403,7 @@ function DomainStep({
     return (
         <div className="bg-card/80 backdrop-blur-xl rounded-2xl border border-border/50 p-8">
             <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 mb-4">
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-linear-to-br from-violet-500/10 to-purple-500/10 mb-4">
                     <Globe className="h-7 w-7 text-violet-500" />
                 </div>
                 <h2 className="text-2xl font-bold">Choose Your Domain</h2>
@@ -493,7 +493,7 @@ function DomainStep({
                 </div>
 
                 {/* Domain Preview Card */}
-                <div className="p-4 rounded-xl bg-gradient-to-br from-violet-500/5 to-purple-500/5 border border-violet-500/20">
+                <div className="p-4 rounded-xl bg-linear-to-br from-violet-500/5 to-purple-500/5 border border-violet-500/20">
                     <div className="flex items-center justify-between mb-3">
                         <span className="text-sm font-medium">Preview</span>
                         <Button variant="ghost" size="sm" className="gap-1 h-7 text-xs">
@@ -529,7 +529,7 @@ function CategoryStep({ formData, setFormData }: any) {
     return (
         <div className="bg-card/80 backdrop-blur-xl rounded-2xl border border-border/50 p-8">
             <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 mb-4">
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-linear-to-br from-violet-500/10 to-purple-500/10 mb-4">
                     <Tag className="h-7 w-7 text-violet-500" />
                 </div>
                 <h2 className="text-2xl font-bold">What's Your Blog About?</h2>
@@ -568,7 +568,7 @@ function AppearanceStep({ formData, setFormData }: any) {
     return (
         <div className="bg-card/80 backdrop-blur-xl rounded-2xl border border-border/50 p-8">
             <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 mb-4">
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-linear-to-br from-violet-500/10 to-purple-500/10 mb-4">
                     <Palette className="h-7 w-7 text-violet-500" />
                 </div>
                 <h2 className="text-2xl font-bold">Customize Your Look</h2>
@@ -638,7 +638,7 @@ function ProfileStep({ formData, setFormData }: any) {
     return (
         <div className="bg-card/80 backdrop-blur-xl rounded-2xl border border-border/50 p-8">
             <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 mb-4">
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-linear-to-br from-violet-500/10 to-purple-500/10 mb-4">
                     <User className="h-7 w-7 text-violet-500" />
                 </div>
                 <h2 className="text-2xl font-bold">Set Up Your Profile</h2>
@@ -649,7 +649,7 @@ function ProfileStep({ formData, setFormData }: any) {
                 {/* Profile Image */}
                 <div className="flex justify-center">
                     <div className="relative">
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold">
+                        <div className="w-24 h-24 rounded-full bg-linear-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold">
                             {formData.displayName ? formData.displayName[0].toUpperCase() : "?"}
                         </div>
                         <button className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-background border-2 border-border flex items-center justify-center hover:bg-muted transition-colors">
@@ -720,7 +720,7 @@ function LaunchStep({ formData }: any) {
     return (
         <div className="bg-card/80 backdrop-blur-xl rounded-2xl border border-border/50 p-8">
             <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 mb-6">
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-linear-to-br from-violet-500 to-purple-600 mb-6">
                     <Rocket className="h-10 w-10 text-white" />
                 </div>
                 <h2 className="text-3xl font-bold mb-2">Ready to Launch! 🚀</h2>
@@ -764,7 +764,7 @@ function LaunchStep({ formData }: any) {
                 </div>
 
                 {/* What's Next */}
-                <div className="mt-6 p-4 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 border border-violet-500/20">
+                <div className="mt-6 p-4 rounded-xl bg-linear-to-br from-violet-500/10 to-purple-500/10 border border-violet-500/20">
                     <h3 className="font-semibold mb-3 flex items-center gap-2">
                         <Sparkles className="h-4 w-4 text-violet-500" /> What's Next?
                     </h3>

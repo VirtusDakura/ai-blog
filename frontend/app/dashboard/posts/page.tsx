@@ -165,7 +165,7 @@ export default function PostsListPage() {
                         <Card key={post.id} className="hover:shadow-md transition-shadow">
                             <CardHeader className="flex flex-row items-start gap-4 p-4">
                                 {/* Thumbnail */}
-                                <div className="relative h-20 w-20 rounded-md overflow-hidden bg-muted flex-shrink-0">
+                                <div className="relative h-20 w-20 rounded-md overflow-hidden bg-muted shrink-0">
                                     {post.coverImage ? (
                                         <Image
                                             src={post.coverImage}
@@ -215,10 +215,10 @@ export default function PostsListPage() {
                                                 </DropdownMenuItem>
                                                 {post.isPublished && (
                                                     <DropdownMenuItem asChild>
-                                                        <Link href={`/blog/${post.slug}`} target="_blank">
+                                                        <a href={`/blog/${post.slug}`} target="_blank" rel="noopener noreferrer">
                                                             <ExternalLink className="mr-2 h-4 w-4" />
                                                             View Post
-                                                        </Link>
+                                                        </a>
                                                     </DropdownMenuItem>
                                                 )}
                                                 <DropdownMenuSeparator />

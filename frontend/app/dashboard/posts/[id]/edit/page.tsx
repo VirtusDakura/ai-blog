@@ -4,12 +4,14 @@ import { useState, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { usePost, useUpdatePost, usePublishPost, useUnpublishPost, useGenerateSeo, useAI } from "@/hooks/use-api"
+import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { TiptapEditor } from "@/components/editor/tiptap-editor"
 import ImageUpload from "@/components/ui/image-upload"
 import {
@@ -21,12 +23,14 @@ import {
     Sparkles,
     ExternalLink,
     Wand2,
-    Settings
+    Settings,
+    AlertTriangle
 } from "lucide-react"
 
 export default function EditPostPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params)
     const router = useRouter()
+    const { toast } = useToast()
 
     // Fetch post data
     const { data: post, isLoading, error } = usePost(id)
@@ -47,6 +51,7 @@ export default function EditPostPage({ params }: { params: Promise<{ id: string 
     const [seoDescription, setSeoDescription] = useState("")
     const [seoKeywords, setSeoKeywords] = useState<string[]>([])
     const [showSeoPanel, setShowSeoPanel] = useState(false)
+    const [showRegenerateDialog, setShowRegenerateDialog] = useState(false)
 
     // Initialize form with post data
     useEffect(() => {
@@ -68,7 +73,7 @@ export default function EditPostPage({ params }: { params: Promise<{ id: string 
 
     const handleSave = async () => {
         if (!title) {
-            alert("Please enter a title")
+            toast({ title: "Title required", description: "Please enter a title", variant: "warning" })
             return
         }
 
@@ -85,10 +90,10 @@ export default function EditPostPage({ params }: { params: Promise<{ id: string 
                     seoKeywords,
                 }
             })
-            alert("Post saved successfully!")
+            toast({ title: "Saved!", description: "Post saved successfully!", variant: "success" })
         } catch (error) {
             console.error(error)
-            alert("Failed to save post. Please try again.")
+            toast({ title: "Save failed", description: "Failed to save post. Please try again.", variant: "error" })
         }
     }
 
@@ -102,20 +107,20 @@ export default function EditPostPage({ params }: { params: Promise<{ id: string 
 
             if (post?.isPublished) {
                 await unpublishPost.mutateAsync(id)
-                alert("Post unpublished!")
+                toast({ title: "Unpublished", description: "Post has been unpublished", variant: "success" })
             } else {
                 await publishPost.mutateAsync(id)
-                alert("Post published successfully!")
+                toast({ title: "Published!", description: "Post published successfully!", variant: "success" })
             }
         } catch (error) {
             console.error(error)
-            alert("Failed to update publish status. Please try again.")
+            toast({ title: "Action failed", description: "Failed to update publish status. Please try again.", variant: "error" })
         }
     }
 
     const handleGenerateSeo = async () => {
         if (!content) {
-            alert("Please add some content first")
+            toast({ title: "Content required", description: "Please add some content first", variant: "warning" })
             return
         }
 
@@ -124,28 +129,28 @@ export default function EditPostPage({ params }: { params: Promise<{ id: string 
             setSeoTitle(seoData.title)
             setSeoDescription(seoData.description)
             setSeoKeywords(seoData.keywords)
+            toast({ title: "SEO generated", description: "SEO metadata has been generated", variant: "success" })
         } catch (error) {
             console.error(error)
-            alert("Failed to generate SEO metadata. Please try again.")
+            toast({ title: "Generation failed", description: "Failed to generate SEO metadata. Please try again.", variant: "error" })
         }
     }
 
     const handleRegenerateContent = async () => {
         if (!title) {
-            alert("Please enter a title first")
+            toast({ title: "Title required", description: "Please enter a title first", variant: "warning" })
             return
         }
 
-        if (!confirm("This will regenerate the content. Are you sure?")) {
-            return
-        }
+        setShowRegenerateDialog(false)
 
         try {
             const data = await generateArticle.mutateAsync({ topic: title })
             setContent(data.content)
+            toast({ title: "Regenerated!", description: "Content has been regenerated with AI", variant: "success" })
         } catch (error) {
             console.error(error)
-            alert("Failed to regenerate content. Please try again.")
+            toast({ title: "Regeneration failed", description: "Failed to regenerate content. Please try again.", variant: "error" })
         }
     }
 
@@ -231,15 +236,45 @@ export default function EditPostPage({ params }: { params: Promise<{ id: string 
                     </Button>
                     {post.isPublished && (
                         <Button variant="ghost" size="icon" asChild>
-                            <Link href={`/blog/${post.slug}`} target="_blank">
+                            <a href={`/blog/${post.slug}`} target="_blank" rel="noopener noreferrer">
                                 <ExternalLink className="h-4 w-4" />
-                            </Link>
+                            </a>
                         </Button>
                     )}
                 </div>
             </div>
 
             <Separator />
+
+            {/* Regenerate Confirmation Dialog */}
+            <Dialog open={showRegenerateDialog} onOpenChange={setShowRegenerateDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5 text-amber-500" />
+                            Regenerate Content
+                        </DialogTitle>
+                        <DialogDescription>
+                            This will replace all existing content with AI-generated content based on your title. This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowRegenerateDialog(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleRegenerateContent} disabled={isRegenerating}>
+                            {isRegenerating ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Regenerating...
+                                </>
+                            ) : (
+                                "Regenerate"
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Main Editor */}
@@ -262,7 +297,7 @@ export default function EditPostPage({ params }: { params: Promise<{ id: string 
                     <div className="flex justify-end">
                         <Button
                             variant="outline"
-                            onClick={handleRegenerateContent}
+                            onClick={() => setShowRegenerateDialog(true)}
                             disabled={isRegenerating || !title}
                             size="sm"
                         >

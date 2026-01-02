@@ -143,7 +143,7 @@ export default async function AuthorProfilePage({ params }: { params: Promise<{ 
                 <section className="flex flex-col md:flex-row items-center md:items-start gap-8 mb-12">
                     <Avatar className="h-32 w-32 border-4 border-primary/20 shadow-xl">
                         <AvatarImage src={user.avatarUrl || undefined} />
-                        <AvatarFallback className="text-4xl bg-gradient-to-br from-primary/20 to-accent/20">
+                        <AvatarFallback className="text-4xl bg-linear-to-br from-primary/20 to-accent/20">
                             {getInitials(user.firstName, user.lastName, user.email)}
                         </AvatarFallback>
                     </Avatar>
@@ -205,7 +205,7 @@ export default async function AuthorProfilePage({ params }: { params: Promise<{ 
                             {posts.map((post) => (
                                 <Card key={post.id} className="overflow-hidden group hover:shadow-lg transition-all duration-300 border-muted/50 hover:border-primary/20">
                                     <Link href={`/blog/${post.slug}`}>
-                                        <div className="relative h-40 bg-gradient-to-br from-primary/20 to-accent/20 overflow-hidden">
+                                        <div className="relative h-40 bg-linear-to-br from-primary/20 to-accent/20 overflow-hidden">
                                             {post.coverImage ? (
                                                 <Image
                                                     src={post.coverImage}

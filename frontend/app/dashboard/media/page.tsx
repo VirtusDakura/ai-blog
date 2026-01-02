@@ -56,7 +56,7 @@ export default function MediaPage() {
                         Manage your images and media files
                     </p>
                 </div>
-                <Button className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600">
+                <Button className="bg-linear-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600">
                     <Upload className="mr-2 h-4 w-4" />
                     Upload Media
                 </Button>
@@ -234,7 +234,7 @@ export default function MediaPage() {
                             <span className="text-muted-foreground">2.5%</span>
                         </div>
                         <div className="h-2 bg-muted rounded-full overflow-hidden">
-                            <div className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full" style={{ width: "2.5%" }} />
+                            <div className="h-full bg-linear-to-r from-blue-500 to-cyan-500 rounded-full" style={{ width: "2.5%" }} />
                         </div>
                     </div>
                 </CardContent>

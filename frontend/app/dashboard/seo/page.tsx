@@ -159,7 +159,7 @@ export default function SEOPage() {
             </div>
 
             {/* SEO Score Card */}
-            <Card className="bg-gradient-to-br from-violet-500/10 to-purple-500/10 border-violet-500/20">
+            <Card className="bg-linear-to-br from-violet-500/10 to-purple-500/10 border-violet-500/20">
                 <CardContent className="pt-6">
                     <div className="flex items-center justify-between mb-4">
                         <div>

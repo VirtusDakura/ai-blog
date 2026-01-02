@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { useToast } from "@/hooks/use-toast"
 import {
     Sparkles,
     Lightbulb,
@@ -23,6 +24,8 @@ import {
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"
 
 export default function AIToolsPage() {
+    const { toast } = useToast()
+    
     // Idea Generator State
     const [niche, setNiche] = useState("")
     const [ideas, setIdeas] = useState<string[]>([])
@@ -50,6 +53,7 @@ export default function AIToolsPage() {
     const copyToClipboard = async (text: string, id: string) => {
         await navigator.clipboard.writeText(text)
         setCopiedId(id)
+        toast({ title: "Copied!", description: "Content copied to clipboard", variant: "success" })
         setTimeout(() => setCopiedId(null), 2000)
     }
 
@@ -63,9 +67,10 @@ export default function AIToolsPage() {
             })
             const data = await res.json()
             setIdeas(data.ideas || [])
+            toast({ title: "Ideas generated!", description: "Check out your new blog ideas below", variant: "success" })
         } catch (error) {
             console.error(error)
-            alert("Failed to generate ideas")
+            toast({ title: "Generation failed", description: "Failed to generate ideas. Please try again.", variant: "error" })
         } finally {
             setIsGeneratingIdeas(false)
         }
@@ -82,9 +87,10 @@ export default function AIToolsPage() {
             })
             const data = await res.json()
             setRewriteOutput(data.content || "")
+            toast({ title: "Content rewritten!", description: "Your content has been rewritten", variant: "success" })
         } catch (error) {
             console.error(error)
-            alert("Failed to rewrite content")
+            toast({ title: "Rewrite failed", description: "Failed to rewrite content. Please try again.", variant: "error" })
         } finally {
             setIsRewriting(false)
         }
@@ -101,9 +107,10 @@ export default function AIToolsPage() {
             })
             const data = await res.json()
             setExpandOutput(data.content || "")
+            toast({ title: "Content expanded!", description: "Your content has been expanded", variant: "success" })
         } catch (error) {
             console.error(error)
-            alert("Failed to expand content")
+            toast({ title: "Expansion failed", description: "Failed to expand content. Please try again.", variant: "error" })
         } finally {
             setIsExpanding(false)
         }
@@ -120,9 +127,10 @@ export default function AIToolsPage() {
             })
             const data = await res.json()
             setSummarizeOutput(data.summary || "")
+            toast({ title: "Content summarized!", description: "Your content has been summarized", variant: "success" })
         } catch (error) {
             console.error(error)
-            alert("Failed to summarize content")
+            toast({ title: "Summarization failed", description: "Failed to summarize content. Please try again.", variant: "error" })
         } finally {
             setIsSummarizing(false)
         }
@@ -163,7 +171,7 @@ export default function AIToolsPage() {
                         <Button
                             onClick={handleGenerateIdeas}
                             disabled={isGeneratingIdeas}
-                            className="bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600"
+                            className="bg-linear-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600"
                         >
                             {isGeneratingIdeas ? (
                                 <>
@@ -340,7 +348,7 @@ export default function AIToolsPage() {
                         Summarize
                     </Button>
                     {summarizeOutput && (
-                        <div className="p-4 rounded-lg bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/20">
+                        <div className="p-4 rounded-lg bg-linear-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/20">
                             <div className="flex items-center justify-between mb-2">
                                 <p className="text-xs font-medium text-muted-foreground uppercase">Summary</p>
                                 <Button

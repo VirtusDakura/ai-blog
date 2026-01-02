@@ -180,7 +180,7 @@ export default function MonetizationPage() {
 
             {/* Earnings Overview */}
             <div className="grid gap-4 md:grid-cols-4">
-                <Card className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20">
+                <Card className="bg-linear-to-br from-green-500/10 to-emerald-500/10 border-green-500/20">
                     <CardContent className="pt-6">
                         <div className="flex items-center justify-between">
                             <div>
@@ -277,7 +277,7 @@ export default function MonetizationPage() {
                                                     <div className="flex items-center gap-2">
                                                         <CardTitle className="text-lg">{method.name}</CardTitle>
                                                         {method.premium && (
-                                                            <Badge className="bg-gradient-to-r from-amber-500 to-orange-500">Pro</Badge>
+                                                            <Badge className="bg-linear-to-r from-amber-500 to-orange-500">Pro</Badge>
                                                         )}
                                                     </div>
                                                     <CardDescription>{method.description}</CardDescription>
@@ -328,7 +328,7 @@ export default function MonetizationPage() {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <div className="max-w-md mx-auto p-6 rounded-xl border bg-gradient-to-br from-violet-500/5 to-purple-500/5">
+                                <div className="max-w-md mx-auto p-6 rounded-xl border bg-linear-to-br from-violet-500/5 to-purple-500/5">
                                     <div className="text-center mb-4">
                                         <Coffee className="h-8 w-8 mx-auto mb-2 text-violet-500" />
                                         <p className="font-medium">{donationSettings.message}</p>
@@ -348,7 +348,7 @@ export default function MonetizationPage() {
                                             </button>
                                         )}
                                     </div>
-                                    <Button className="w-full bg-gradient-to-r from-violet-500 to-purple-600">
+                                    <Button className="w-full bg-linear-to-r from-violet-500 to-purple-600">
                                         <Gift className="mr-2 h-4 w-4" />
                                         Support
                                     </Button>
@@ -378,7 +378,7 @@ export default function MonetizationPage() {
                                     {donationData.donations.map((donation) => (
                                         <div key={donation.id} className="flex items-center justify-between p-4 rounded-lg border">
                                             <div className="flex items-center gap-4">
-                                                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-medium">
+                                                <div className="h-10 w-10 rounded-full bg-linear-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-medium">
                                                     {(donation.donorName || "A").charAt(0)}
                                                 </div>
                                                 <div>

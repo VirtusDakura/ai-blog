@@ -140,7 +140,7 @@ function DashboardContent() {
         <div className="space-y-8">
             {/* Welcome Banner - Only shown after onboarding */}
             {showWelcome && (
-                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 p-8 text-white">
+                <div className="relative overflow-hidden rounded-2xl bg-linear-to-r from-violet-600 via-purple-600 to-indigo-600 p-8 text-white">
                     {/* Background Effects */}
                     <div className="absolute inset-0">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
@@ -168,13 +168,15 @@ function DashboardContent() {
 
                         {/* Blog URL - Links to /blog page */}
                         <div className="flex items-center gap-3 mt-6">
-                            <Link
+                            <a
                                 href="/blog"
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors"
                             >
                                 <Globe className="h-4 w-4" />
                                 <span className="font-mono text-sm">{displayDomainText}</span>
-                            </Link>
+                            </a>
                             <Button
                                 variant="secondary"
                                 size="sm"
@@ -189,9 +191,9 @@ function DashboardContent() {
                                 asChild
                                 className="bg-white/20 hover:bg-white/30 border-0"
                             >
-                                <Link href="/blog">
+                                <a href="/blog" target="_blank" rel="noopener noreferrer">
                                     <ExternalLink className="h-4 w-4" />
-                                </Link>
+                                </a>
                             </Button>
                         </div>
                     </div>
@@ -201,19 +203,21 @@ function DashboardContent() {
             {/* Page Header with Blog Info */}
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-500/25">
+                    <div className="p-3 rounded-2xl bg-linear-to-br from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-500/25">
                         <BookOpen className="h-8 w-8" />
                     </div>
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight">{blogName}</h1>
                         <div className="flex items-center gap-2 mt-1">
                             <Globe className="h-4 w-4 text-muted-foreground" />
-                            <Link
+                            <a
                                 href="/blog"
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="text-muted-foreground font-mono text-sm hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
                             >
                                 {displayDomainText}
-                            </Link>
+                            </a>
                             <button
                                 onClick={copyDomain}
                                 className="p-1 hover:bg-muted rounded transition-colors"
@@ -225,24 +229,26 @@ function DashboardContent() {
                                     <Copy className="h-3.5 w-3.5 text-muted-foreground" />
                                 )}
                             </button>
-                            <Link
+                            <a
                                 href="/blog"
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="p-1 hover:bg-muted rounded transition-colors"
                                 title="Visit Blog"
                             >
                                 <ExternalLink className="h-3.5 w-3.5 text-muted-foreground hover:text-violet-600" />
-                            </Link>
+                            </a>
                         </div>
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
                     <Button variant="outline" size="lg" asChild>
-                        <Link href="/blog">
+                        <a href="/blog" target="_blank" rel="noopener noreferrer">
                             <Eye className="mr-2 h-4 w-4" />
                             View Blog
-                        </Link>
+                        </a>
                     </Button>
-                    <Button asChild size="lg" className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 shadow-lg shadow-violet-500/25 group">
+                    <Button asChild size="lg" className="bg-linear-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 shadow-lg shadow-violet-500/25 group">
                         <Link href="/dashboard/posts/new">
                             <PlusCircle className="mr-2 h-4 w-4" />
                             New Post
@@ -263,7 +269,7 @@ function DashboardContent() {
                     </>
                 ) : (
                     <>
-                        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-violet-500/10 via-violet-500/5 to-transparent">
+                        <Card className="relative overflow-hidden border-0 bg-linear-to-br from-violet-500/10 via-violet-500/5 to-transparent">
                             <div className="absolute top-0 right-0 w-24 h-24 bg-violet-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -281,7 +287,7 @@ function DashboardContent() {
                             </CardContent>
                         </Card>
 
-                        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-green-500/10 via-green-500/5 to-transparent">
+                        <Card className="relative overflow-hidden border-0 bg-linear-to-br from-green-500/10 via-green-500/5 to-transparent">
                             <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -301,7 +307,7 @@ function DashboardContent() {
                             </CardContent>
                         </Card>
 
-                        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent">
+                        <Card className="relative overflow-hidden border-0 bg-linear-to-br from-amber-500/10 via-amber-500/5 to-transparent">
                             <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -321,7 +327,7 @@ function DashboardContent() {
                             </CardContent>
                         </Card>
 
-                        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent">
+                        <Card className="relative overflow-hidden border-0 bg-linear-to-br from-blue-500/10 via-blue-500/5 to-transparent">
                             <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -347,7 +353,7 @@ function DashboardContent() {
             {/* Content Grid */}
             <div className="grid gap-6 lg:grid-cols-3">
                 {/* Getting Started Checklist */}
-                <Card className="lg:col-span-1 border-violet-500/20 bg-gradient-to-br from-violet-500/5 to-transparent">
+                <Card className="lg:col-span-1 border-violet-500/20 bg-linear-to-br from-violet-500/5 to-transparent">
                     <CardHeader>
                         <div className="flex items-center justify-between">
                             <CardTitle className="flex items-center gap-2">
@@ -364,7 +370,7 @@ function DashboardContent() {
                         {/* Progress Bar */}
                         <div className="mt-3 h-2 rounded-full bg-muted overflow-hidden">
                             <div
-                                className="h-full bg-gradient-to-r from-violet-500 to-purple-600 transition-all duration-500"
+                                className="h-full bg-linear-to-r from-violet-500 to-purple-600 transition-all duration-500"
                                 style={{ width: `${completionPercentage}%` }}
                             />
                         </div>
@@ -383,9 +389,9 @@ function DashboardContent() {
                                 `}
                             >
                                 {completedTasks.includes(task.id) ? (
-                                    <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
+                                    <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
                                 ) : (
-                                    <Circle className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                                    <Circle className="h-5 w-5 text-muted-foreground shrink-0" />
                                 )}
                                 <span className={completedTasks.includes(task.id) ? "line-through" : ""}>
                                     {task.label}
@@ -422,7 +428,7 @@ function DashboardContent() {
                                 <p className="text-muted-foreground mb-4">
                                     Start creating amazing content with AI assistance
                                 </p>
-                                <Button asChild className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700">
+                                <Button asChild className="bg-linear-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700">
                                     <Link href="/dashboard/posts/new">
                                         <Sparkles className="mr-2 h-4 w-4" />
                                         Create Your First Post
@@ -474,7 +480,7 @@ function DashboardContent() {
                         href="/dashboard/posts/new"
                         className="flex flex-col items-center gap-3 p-6 rounded-2xl border hover:border-violet-500/50 hover:bg-violet-500/5 transition-all group"
                     >
-                        <div className="p-4 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-500/25 group-hover:scale-110 transition-transform">
+                        <div className="p-4 rounded-xl bg-linear-to-br from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-500/25 group-hover:scale-110 transition-transform">
                             <PlusCircle className="h-6 w-6" />
                         </div>
                         <div className="text-center">
@@ -487,7 +493,7 @@ function DashboardContent() {
                         href="/dashboard/ai"
                         className="flex flex-col items-center gap-3 p-6 rounded-2xl border hover:border-violet-500/50 hover:bg-violet-500/5 transition-all group"
                     >
-                        <div className="p-4 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 text-white shadow-lg shadow-pink-500/25 group-hover:scale-110 transition-transform">
+                        <div className="p-4 rounded-xl bg-linear-to-br from-pink-500 to-rose-600 text-white shadow-lg shadow-pink-500/25 group-hover:scale-110 transition-transform">
                             <Sparkles className="h-6 w-6" />
                         </div>
                         <div className="text-center">
@@ -500,7 +506,7 @@ function DashboardContent() {
                         href="/dashboard/analytics"
                         className="flex flex-col items-center gap-3 p-6 rounded-2xl border hover:border-violet-500/50 hover:bg-violet-500/5 transition-all group"
                     >
-                        <div className="p-4 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 text-white shadow-lg shadow-blue-500/25 group-hover:scale-110 transition-transform">
+                        <div className="p-4 rounded-xl bg-linear-to-br from-blue-500 to-cyan-600 text-white shadow-lg shadow-blue-500/25 group-hover:scale-110 transition-transform">
                             <BarChart3 className="h-6 w-6" />
                         </div>
                         <div className="text-center">
@@ -513,7 +519,7 @@ function DashboardContent() {
                         href="/dashboard/settings"
                         className="flex flex-col items-center gap-3 p-6 rounded-2xl border hover:border-violet-500/50 hover:bg-violet-500/5 transition-all group"
                     >
-                        <div className="p-4 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg shadow-amber-500/25 group-hover:scale-110 transition-transform">
+                        <div className="p-4 rounded-xl bg-linear-to-br from-amber-500 to-orange-600 text-white shadow-lg shadow-amber-500/25 group-hover:scale-110 transition-transform">
                             <Settings className="h-6 w-6" />
                         </div>
                         <div className="text-center">

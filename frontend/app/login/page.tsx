@@ -72,7 +72,7 @@ function LoginForm() {
     return (
         <div className="min-h-screen flex relative overflow-hidden">
             {/* Left Side - Decorative */}
-            <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700">
+            <div className="hidden lg:flex lg:w-1/2 relative bg-linear-to-br from-violet-600 via-purple-600 to-indigo-700">
                 {/* Animated Background Effects */}
                 <div className="absolute inset-0">
                     <div className="absolute top-20 left-20 w-72 h-72 bg-white/10 rounded-full blur-3xl animate-pulse" />
@@ -102,7 +102,7 @@ function LoginForm() {
                                 "Analytics dashboard"
                             ].map((feature, i) => (
                                 <div key={i} className="flex items-center gap-3 text-white/90">
-                                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+                                    <div className="shrink-0 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
                                         <Sparkles className="w-3 h-3" />
                                     </div>
                                     <span>{feature}</span>
@@ -116,7 +116,7 @@ function LoginForm() {
             {/* Right Side - Login Form */}
             <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-background relative">
                 {/* Background Pattern */}
-                <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-purple-500/5" />
+                <div className="absolute inset-0 bg-linear-to-br from-violet-500/5 via-transparent to-purple-500/5" />
                 <div className="absolute top-0 right-0 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
                 <div className="absolute bottom-0 left-0 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
 
@@ -124,7 +124,7 @@ function LoginForm() {
                     {/* Mobile Logo */}
                     <div className="lg:hidden flex justify-center mb-8">
                         <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-                            <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600">
+                            <div className="p-2 rounded-xl bg-linear-to-br from-violet-500 to-purple-600">
                                 <BookOpen className="h-6 w-6 text-white" />
                             </div>
                             <span>AI Blog</span>
@@ -210,7 +210,7 @@ function LoginForm() {
 
                             <Button
                                 type="submit"
-                                className="w-full h-12 text-base font-medium bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 shadow-lg shadow-violet-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-violet-500/30"
+                                className="w-full h-12 text-base font-medium bg-linear-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 shadow-lg shadow-violet-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-violet-500/30"
                                 disabled={isLoading}
                             >
                                 {isLoading ? (

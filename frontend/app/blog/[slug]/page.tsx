@@ -132,13 +132,13 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         : post.author.email.split("@")[0]
 
     return (
-        <div className="min-h-screen bg-background font-[family-name:var(--font-inter)]">
+        <div className="min-h-screen bg-background font-inter">
             {/* Navigation - Clean and minimal */}
             <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-xl border-b border-border/40">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6">
                     <div className="flex h-16 items-center justify-between">
                         <Link href="/blog" className="flex items-center gap-2.5 group">
-                            <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-500/20 group-hover:shadow-violet-500/30 transition-shadow">
+                            <div className="p-2 rounded-xl bg-linear-to-br from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-500/20 group-hover:shadow-violet-500/30 transition-shadow">
                                 <BookOpen className="h-5 w-5" />
                             </div>
                             <span className="font-bold text-xl tracking-tight">The Blog</span>
@@ -195,7 +195,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                     <div className="flex items-center gap-4">
                         <Avatar className="h-12 w-12 border-2 border-background shadow-md">
                             <AvatarImage src={post.author.avatarUrl || undefined} />
-                            <AvatarFallback className="bg-gradient-to-br from-violet-500 to-purple-600 text-white font-medium">
+                            <AvatarFallback className="bg-linear-to-br from-violet-500 to-purple-600 text-white font-medium">
                                 {getInitials(post.author.firstName, post.author.lastName, post.author.email)}
                             </AvatarFallback>
                         </Avatar>
@@ -208,7 +208,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
                 {/* Cover Image */}
                 {post.coverImage && (
-                    <div className="relative aspect-[16/9] rounded-2xl overflow-hidden mb-12 shadow-xl">
+                    <div className="relative aspect-video rounded-2xl overflow-hidden mb-12 shadow-xl">
                         <Image
                             src={post.coverImage}
                             alt={post.title}
@@ -281,10 +281,10 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
                 {/* Author Bio */}
                 <section className="border-t border-border/40 mt-8 pt-12">
-                    <div className="flex flex-col sm:flex-row items-start gap-6 p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/20">
+                    <div className="flex flex-col sm:flex-row items-start gap-6 p-6 sm:p-8 rounded-2xl bg-linear-to-br from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/20">
                         <Avatar className="h-20 w-20 border-4 border-background shadow-lg">
                             <AvatarImage src={post.author.avatarUrl || undefined} />
-                            <AvatarFallback className="text-2xl bg-gradient-to-br from-violet-500 to-purple-600 text-white font-medium">
+                            <AvatarFallback className="text-2xl bg-linear-to-br from-violet-500 to-purple-600 text-white font-medium">
                                 {getInitials(post.author.firstName, post.author.lastName, post.author.email)}
                             </AvatarFallback>
                         </Avatar>
@@ -309,7 +309,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                         <Link href="/blog" className="flex items-center gap-2.5">
-                            <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white">
+                            <div className="p-2 rounded-xl bg-linear-to-br from-violet-500 to-purple-600 text-white">
                                 <BookOpen className="h-4 w-4" />
                             </div>
                             <span className="font-semibold">The Blog</span>

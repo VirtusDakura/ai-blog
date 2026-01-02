@@ -65,7 +65,7 @@ export default function Home() {
       <header className="fixed top-0 z-50 w-full border-b bg-background/80 backdrop-blur-lg">
         <div className="container mx-auto px-4 flex h-16 items-center justify-between">
           <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-            <div className="p-1.5 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600">
+            <div className="p-1.5 rounded-lg bg-linear-to-br from-violet-500 to-purple-600">
               <BookOpen className="h-5 w-5 text-white" />
             </div>
             <span>AI Blog</span>
@@ -77,7 +77,7 @@ export default function Home() {
             <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Sign In
             </Link>
-            <Button asChild size="sm" className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700">
+            <Button asChild size="sm" className="bg-linear-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700">
               <Link href="/register">Get Started Free</Link>
             </Button>
           </nav>
@@ -87,29 +87,29 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 overflow-hidden">
         {/* Background Effects */}
-        <div className="absolute inset-0 bg-gradient-to-b from-violet-500/5 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-b from-violet-500/5 via-transparent to-transparent" />
         <div className="absolute top-20 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl" />
         <div className="absolute top-40 right-1/4 w-80 h-80 bg-purple-500/15 rounded-full blur-3xl" />
 
         <div className="relative container mx-auto px-4">
           <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-500/20 text-sm font-medium mb-8">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-linear-to-r from-violet-500/10 to-purple-500/10 border border-violet-500/20 text-sm font-medium mb-8">
               <Sparkles className="h-4 w-4 text-violet-500" />
               <span className="text-violet-600 dark:text-violet-400">Powered by Advanced AI</span>
             </div>
 
             {/* Headline */}
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-tight">
-              <span className="bg-gradient-to-r from-foreground via-foreground to-foreground/70 bg-clip-text">
+              <span className="bg-linear-to-r from-foreground via-foreground to-foreground/70 bg-clip-text">
                 Create Stunning
               </span>
               <br />
-              <span className="bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-violet-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
                 Blog Content
               </span>
               <br />
-              <span className="bg-gradient-to-r from-foreground via-foreground to-foreground/70 bg-clip-text">
+              <span className="bg-linear-to-r from-foreground via-foreground to-foreground/70 bg-clip-text">
                 with AI
               </span>
             </h1>
@@ -121,7 +121,7 @@ export default function Home() {
 
             {/* CTAs */}
             <div className="flex flex-wrap gap-4 mt-10 justify-center">
-              <Button size="lg" className="h-14 px-8 text-lg bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 shadow-lg shadow-violet-500/25" asChild>
+              <Button size="lg" className="h-14 px-8 text-lg bg-linear-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 shadow-lg shadow-violet-500/25" asChild>
                 <Link href="/dashboard">
                   Start Creating Free
                   <ArrowRight className="ml-2 h-5 w-5" />
@@ -159,7 +159,7 @@ export default function Home() {
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
               Everything You Need to
-              <span className="bg-gradient-to-r from-violet-500 to-purple-500 bg-clip-text text-transparent"> Blog Like a Pro</span>
+              <span className="bg-linear-to-r from-violet-500 to-purple-500 bg-clip-text text-transparent"> Blog Like a Pro</span>
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
               Powerful features designed to help you create, manage, and grow your blog with AI assistance.
@@ -184,8 +184,8 @@ export default function Home() {
 
       {/* CTA Section */}
       <section className="py-24 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-pink-500/10" />
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-violet-500/20 to-purple-500/20 rounded-full blur-3xl" />
+        <div className="absolute inset-0 bg-linear-to-r from-violet-500/10 via-purple-500/10 to-pink-500/10" />
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-linear-to-r from-violet-500/20 to-purple-500/20 rounded-full blur-3xl" />
 
         <div className="relative container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-6">
@@ -195,7 +195,7 @@ export default function Home() {
             Join thousands of creators using AI to write better content, faster. Start your free account today.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
-            <Button size="lg" className="h-14 px-10 text-lg bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700" asChild>
+            <Button size="lg" className="h-14 px-10 text-lg bg-linear-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700" asChild>
               <Link href="/register">
                 Get Started Free
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -215,7 +215,7 @@ export default function Home() {
         <div className="container mx-auto px-4 py-12">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600">
+              <div className="p-1.5 rounded-lg bg-linear-to-br from-violet-500 to-purple-600">
                 <BookOpen className="h-4 w-4 text-white" />
               </div>
               <span className="font-bold">AI Blog Platform</span>

@@ -8,6 +8,11 @@ import Placeholder from "@tiptap/extension-placeholder"
 import Link from "@tiptap/extension-link"
 import { EditorToolbar } from "./toolbar"
 import { useGeneratePost } from "@/hooks/use-api"
+import { useToast } from "@/hooks/use-toast"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
 
 interface TiptapEditorProps {
     content: string
@@ -16,7 +21,10 @@ interface TiptapEditorProps {
 
 export function TiptapEditor({ content, onChange }: TiptapEditorProps) {
     const [isGenerating, setIsGenerating] = useState(false)
+    const [showImageDialog, setShowImageDialog] = useState(false)
+    const [imageUrl, setImageUrl] = useState("")
     const generatePost = useGeneratePost()
+    const { toast } = useToast()
 
     const editor = useEditor({
         extensions: [
@@ -45,9 +53,15 @@ export function TiptapEditor({ content, onChange }: TiptapEditorProps) {
     })
 
     const handleImageUpload = () => {
-        const url = window.prompt("Enter image URL:")
-        if (url && editor) {
-            editor.chain().focus().setImage({ src: url }).run()
+        setShowImageDialog(true)
+    }
+
+    const handleInsertImage = () => {
+        if (imageUrl && editor) {
+            editor.chain().focus().setImage({ src: imageUrl }).run()
+            setShowImageDialog(false)
+            setImageUrl("")
+            toast({ title: "Image added", description: "Image has been inserted into the editor", variant: "success" })
         }
     }
 
@@ -56,7 +70,7 @@ export function TiptapEditor({ content, onChange }: TiptapEditorProps) {
 
         const currentText = editor.getText()
         if (!currentText || currentText.length < 10) {
-            alert("Please write at least a sentence to continue with AI")
+            toast({ title: "More content needed", description: "Please write at least a sentence to continue with AI", variant: "warning" })
             return
         }
 
@@ -75,25 +89,56 @@ export function TiptapEditor({ content, onChange }: TiptapEditorProps) {
                 .trim()
 
             editor.chain().focus().insertContent(" " + continuation).run()
+            toast({ title: "AI content added", description: "AI has continued your text", variant: "success" })
         } catch (error) {
             console.error("AI autocomplete failed:", error)
-            alert("Failed to generate AI content. Please try again.")
+            toast({ title: "AI failed", description: "Failed to generate AI content. Please try again.", variant: "error" })
         } finally {
             setIsGenerating(false)
         }
     }
 
     return (
-        <div className="border rounded-md shadow-sm bg-card text-card-foreground">
-            <EditorToolbar
-                editor={editor}
-                onImageUpload={handleImageUpload}
-                onAIAutocomplete={handleAIAutocomplete}
-                isGenerating={isGenerating}
-            />
-            <div className="p-4">
-                <EditorContent editor={editor} />
+        <>
+            <div className="border rounded-lg shadow-sm bg-card text-card-foreground">
+                <EditorToolbar
+                    editor={editor}
+                    onImageUpload={handleImageUpload}
+                    onAIAutocomplete={handleAIAutocomplete}
+                    isGenerating={isGenerating}
+                />
+                <div className="p-4">
+                    <EditorContent editor={editor} />
+                </div>
             </div>
-        </div>
+
+            {/* Image URL Dialog */}
+            <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Insert Image</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="imageUrl">Image URL</Label>
+                            <Input
+                                id="imageUrl"
+                                placeholder="https://example.com/image.jpg"
+                                value={imageUrl}
+                                onChange={(e) => setImageUrl(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowImageDialog(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleInsertImage} disabled={!imageUrl}>
+                            Insert
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
     )
 }

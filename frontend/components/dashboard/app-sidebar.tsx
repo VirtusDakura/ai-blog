@@ -2,15 +2,13 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { NavMain } from "@/components/dashboard/nav-main"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useBlog, getBlogUrl, getDisplayDomain } from "@/contexts/blog-context"
+import { useBlog, getDisplayDomain } from "@/contexts/blog-context"
 import {
     BookOpen, FileText, Home, Image as ImageIcon, Settings, Sparkles, BarChart3,
     Globe, ExternalLink, ChevronDown, AlertCircle, MessageSquare, Palette,
-    DollarSign, Users, Tag, Layout, Search, Shield, Download, Megaphone,
-    Code, Rss, Bell
+    DollarSign, Users, Tag, Layout, Search, Megaphone, Code
 } from "lucide-react"
 
 // Main navigation items
@@ -139,7 +137,7 @@ function NavSection({ title, items }: NavSectionProps) {
                                 }
                             `}
                         >
-                            <Icon className="h-4 w-4 flex-shrink-0" />
+                            <Icon className="h-4 w-4 shrink-0" />
                             {item.title}
                         </Link>
                     )
@@ -173,7 +171,7 @@ export function AppSidebar({ className }: { className?: string }) {
                     </div>
                 ) : (
                     <Link href="/dashboard" className="flex items-center gap-3 group">
-                        <div className={`p-2 rounded-xl text-white shadow-lg ${needsSetup ? 'bg-gradient-to-br from-amber-500 to-orange-600 shadow-amber-500/20' : 'bg-gradient-to-br from-violet-500 to-purple-600 shadow-violet-500/20'}`}>
+                        <div className={`p-2 rounded-xl text-white shadow-lg ${needsSetup ? 'bg-linear-to-br from-amber-500 to-orange-600 shadow-amber-500/20' : 'bg-linear-to-br from-violet-500 to-purple-600 shadow-violet-500/20'}`}>
                             {needsSetup ? <AlertCircle className="h-5 w-5" /> : <BookOpen className="h-5 w-5" />}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -194,20 +192,22 @@ export function AppSidebar({ className }: { className?: string }) {
                 {needsSetup ? (
                     <Link
                         href="/onboarding"
-                        className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-violet-500 to-purple-600 text-white text-sm font-medium transition-colors hover:from-violet-600 hover:to-purple-700"
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-linear-to-r from-violet-500 to-purple-600 text-white text-sm font-medium transition-colors hover:from-violet-600 hover:to-purple-700"
                     >
                         <Sparkles className="h-4 w-4" />
                         Complete Setup
                     </Link>
                 ) : (
-                    <Link
+                    <a
                         href="/blog"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-muted/50 hover:bg-violet-500/10 hover:text-violet-600 dark:hover:text-violet-400 text-sm font-medium transition-colors group"
                     >
                         <Globe className="h-4 w-4" />
                         View Blog
                         <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </Link>
+                    </a>
                 )}
             </div>
 
@@ -222,7 +222,7 @@ export function AppSidebar({ className }: { className?: string }) {
 
             {/* Pro Banner */}
             <div className="p-4 lg:p-6 border-t">
-                <div className="p-4 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 border border-violet-500/20">
+                <div className="p-4 rounded-xl bg-linear-to-br from-violet-500/10 to-purple-500/10 border border-violet-500/20">
                     <div className="flex items-center gap-2 mb-2">
                         <Sparkles className="h-4 w-4 text-violet-500" />
                         <span className="text-sm font-semibold">AI-Powered</span>

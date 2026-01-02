@@ -29,7 +29,7 @@ const THEMES = [
         id: "modern",
         name: "Modern",
         description: "Contemporary aesthetic with subtle gradients",
-        preview: "bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border",
+        preview: "bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 border",
         colors: ["#f8fafc", "#e2e8f0", "#1e293b"]
     },
     {
