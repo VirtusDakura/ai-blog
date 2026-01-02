@@ -8,7 +8,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"
+// For server components, use API_URL (server-side) or NEXT_PUBLIC_API_URL (build time)
+const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"
 
 interface User {
     id: string

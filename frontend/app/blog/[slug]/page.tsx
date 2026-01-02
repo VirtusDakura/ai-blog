@@ -6,7 +6,8 @@ import { BookOpen, Calendar, Clock, ArrowLeft, Share2, Twitter, Facebook, Linked
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { CommentsWrapper } from "./comments-wrapper"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"
+// For server components, use API_URL (server-side) or NEXT_PUBLIC_API_URL (build time)
+const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"
 
 interface Post {
     id: string
@@ -35,17 +36,24 @@ interface Post {
 
 async function getPost(slug: string): Promise<Post | null> {
     try {
-        const res = await fetch(`${API_URL}/posts/slug/${slug}`, {
-            next: { revalidate: 60 }
+        const url = `${API_URL}/posts/slug/${slug}`
+        console.log("[Blog Page] Fetching post from:", url)
+        
+        const res = await fetch(url, {
+            next: { revalidate: 60 },
+            headers: {
+                'Content-Type': 'application/json',
+            },
         })
 
         if (!res.ok) {
+            console.error("[Blog Page] Failed to fetch post:", res.status, res.statusText)
             return null
         }
 
         return res.json()
     } catch (error) {
-        console.error("Failed to fetch post:", error)
+        console.error("[Blog Page] Error fetching post:", error)
         return null
     }
 }
