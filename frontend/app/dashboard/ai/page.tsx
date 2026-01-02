@@ -1,13 +1,13 @@
 "use client"
 
 import { useState } from "react"
+import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
 import {
     Sparkles,
@@ -23,7 +23,12 @@ import {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SessionAny = any
+
 export default function AIToolsPage() {
+    const { data: session } = useSession()
+    const token = (session as SessionAny)?.accessToken
     const { toast } = useToast()
     
     // Idea Generator State
@@ -62,7 +67,10 @@ export default function AIToolsPage() {
         try {
             const res = await fetch(`${API_URL}/ai/ideas`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { 
+                    "Content-Type": "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {})
+                },
                 body: JSON.stringify({ niche, count: 5 })
             })
             const data = await res.json()
@@ -82,7 +90,10 @@ export default function AIToolsPage() {
         try {
             const res = await fetch(`${API_URL}/ai/rewrite`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { 
+                    "Content-Type": "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {})
+                },
                 body: JSON.stringify({ content: rewriteInput, style: rewriteStyle || undefined })
             })
             const data = await res.json()
@@ -102,7 +113,10 @@ export default function AIToolsPage() {
         try {
             const res = await fetch(`${API_URL}/ai/expand`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { 
+                    "Content-Type": "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {})
+                },
                 body: JSON.stringify({ content: expandInput })
             })
             const data = await res.json()
@@ -122,7 +136,10 @@ export default function AIToolsPage() {
         try {
             const res = await fetch(`${API_URL}/ai/summarize`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { 
+                    "Content-Type": "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {})
+                },
                 body: JSON.stringify({ content: summarizeInput })
             })
             const data = await res.json()
