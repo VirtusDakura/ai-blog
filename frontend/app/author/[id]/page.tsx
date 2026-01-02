@@ -2,7 +2,7 @@ import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { BookOpen, Calendar, User as UserIcon, Mail } from "lucide-react"
+import { BookOpen, Calendar, User as UserIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
@@ -121,7 +121,7 @@ export default async function AuthorProfilePage({ params }: { params: Promise<{ 
     return (
         <div className="min-h-screen bg-background">
             {/* Navigation */}
-            <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
                 <div className="container mx-auto px-4 flex h-16 items-center justify-between">
                     <Link href="/blog" className="flex items-center gap-2 font-bold text-xl">
                         <BookOpen className="h-6 w-6 text-primary" />
