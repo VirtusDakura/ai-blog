@@ -54,10 +54,15 @@ function LoginForm() {
                 const sessionRes = await fetch('/api/auth/session')
                 const session = await sessionRes.json()
                 const userId = session?.user?.id
+                const token = session?.accessToken
                 
                 if (userId) {
                     // Check if user has completed onboarding
-                    const res = await fetch(`${API_URL}/blog/status?userId=${userId}`)
+                    const res = await fetch(`${API_URL}/blog/status?userId=${userId}`, {
+                        headers: {
+                            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                        },
+                    })
                     const data = await res.json()
 
                     if (data.hasCompletedOnboarding) {

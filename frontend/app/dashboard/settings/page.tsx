@@ -87,10 +87,14 @@ export default function SettingsPage() {
         try {
             const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
             const userId = (session?.user as { id?: string })?.id
+            const token = (session as { accessToken?: string })?.accessToken
 
             const res = await fetch(`${API_URL}/blog/setup`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { 
+                    "Content-Type": "application/json",
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                },
                 body: JSON.stringify({
                     userId,
                     ...generalSettings,

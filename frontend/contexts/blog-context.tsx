@@ -59,12 +59,14 @@ export function BlogProvider({ children }: { children: ReactNode }) {
 
         try {
             const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+            const token = (session as { accessToken?: string })?.accessToken
 
             // Pass userId as query parameter since we're not using cookie auth with backend
             const res = await fetch(`${API_URL}/blog/settings?userId=${userId}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
                 },
             })
 

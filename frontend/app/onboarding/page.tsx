@@ -124,7 +124,12 @@ export default function OnboardingPage() {
 
             try {
                 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
-                const res = await fetch(`${API_URL}/blog/status?userId=${userId}`)
+                const token = (session as { accessToken?: string })?.accessToken
+                const res = await fetch(`${API_URL}/blog/status?userId=${userId}`, {
+                    headers: {
+                        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                    },
+                })
                 const data = await res.json()
 
                 if (data.hasCompletedOnboarding) {
@@ -195,8 +200,10 @@ export default function OnboardingPage() {
 
             const res = await fetch(`${API_URL}/blog/setup`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: 'include',
+                headers: { 
+                    "Content-Type": "application/json",
+                    ...((session as { accessToken?: string })?.accessToken ? { 'Authorization': `Bearer ${(session as { accessToken?: string })?.accessToken}` } : {}),
+                },
                 body: JSON.stringify({
                     ...formData,
                     userId,
