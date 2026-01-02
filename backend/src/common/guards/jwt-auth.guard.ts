@@ -16,7 +16,7 @@ export interface JwtPayload {
   [key: string]: unknown;
 }
 
-export interface RequestWithUser extends Request {
+interface RequestWithUser extends Request {
   user?: JwtPayload;
 }
 
@@ -38,7 +38,7 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest<RequestWithUser>();
-    const authHeader = request.headers.authorization;
+    const authHeader: string | undefined = request.headers.authorization;
 
     if (!authHeader) {
       throw new UnauthorizedException('No authorization header provided');
