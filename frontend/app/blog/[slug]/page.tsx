@@ -2,9 +2,10 @@ import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { BookOpen, Calendar, Clock, ArrowLeft, Share2, Twitter, Facebook, Linkedin, Copy, Check } from "lucide-react"
+import { BookOpen, Calendar, Clock, ArrowLeft } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { CommentsWrapper } from "./comments-wrapper"
+import { ShareButtons } from "./share-buttons"
 
 // For server components, use API_URL (server-side) or NEXT_PUBLIC_API_URL (build time)
 const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"
@@ -112,19 +113,6 @@ function getInitials(firstName?: string | null, lastName?: string | null, email?
         return email[0].toUpperCase()
     }
     return "A"
-}
-
-// Share Button Component
-function ShareButton({ icon: Icon, label, onClick }: { icon: typeof Twitter; label: string; onClick: () => void }) {
-    return (
-        <button
-            onClick={onClick}
-            className="p-2.5 rounded-xl border border-border/50 hover:bg-muted hover:border-border transition-all"
-            aria-label={label}
-        >
-            <Icon className="h-4 w-4 text-muted-foreground" />
-        </button>
-    )
 }
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -243,49 +231,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                 />
 
                 {/* Share Section */}
-                <div className="border-t border-border/40 mt-16 pt-8">
-                    <div className="flex items-center justify-between flex-wrap gap-4">
-                        <p className="text-sm font-medium text-muted-foreground">Share this article</p>
-                        <div className="flex items-center gap-2">
-                            <ShareButton
-                                icon={Twitter}
-                                label="Share on Twitter"
-                                onClick={() => {
-                                    if (typeof window !== 'undefined') {
-                                        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(post.title)}&url=${encodeURIComponent(window.location.href)}`, '_blank')
-                                    }
-                                }}
-                            />
-                            <ShareButton
-                                icon={Facebook}
-                                label="Share on Facebook"
-                                onClick={() => {
-                                    if (typeof window !== 'undefined') {
-                                        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank')
-                                    }
-                                }}
-                            />
-                            <ShareButton
-                                icon={Linkedin}
-                                label="Share on LinkedIn"
-                                onClick={() => {
-                                    if (typeof window !== 'undefined') {
-                                        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}`, '_blank')
-                                    }
-                                }}
-                            />
-                            <ShareButton
-                                icon={Copy}
-                                label="Copy link"
-                                onClick={() => {
-                                    if (typeof window !== 'undefined') {
-                                        navigator.clipboard.writeText(window.location.href)
-                                    }
-                                }}
-                            />
-                        </div>
-                    </div>
-                </div>
+                <ShareButtons title={post.title} />
 
                 {/* Author Bio */}
                 <section className="border-t border-border/40 mt-8 pt-12">
